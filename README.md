@@ -1,3 +1,4 @@
+HEAD
 # Bryneven Primary School Helper Chatbot
 
 A friendly chatbot assistant for Bryneven Primary School students, built using HTML, CSS, JavaScript, and the Gemini 1.5 Pro API.
@@ -61,3 +62,6 @@ git clone [your-repository-url]
 ## License
 
 [Your chosen license]
+# Chat002
+My chatbot
+ 3bd1845c82238564385b61b83cfe2e4e0b6c4610
