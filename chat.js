@@ -1,5 +1,5 @@
 // Use API key from config file
-//const API_KEY = config.API_KEY;
+const API_KEY = config.API_KEY;
 
 // Chat history
 let chatHistory = [];
