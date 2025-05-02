@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bryneven Primary School Helper</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- Shared header will be loaded here -->
+<div id="header-container"></div>
+<script>
+  fetch('header.html')
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('header-container').innerHTML = html;
+    });
+</script>
+<div class="chat-container">
+    <main id="chat-area" class="flex-1 overflow-y-auto">
+        <!-- Example messages, real messages will be rendered by JS -->
+        <div class="message bot"><p>Hi there! 👋 I'm the Bryneven Primary School Helper! ...</p></div>
+        <div class="message user"><p>Thank you!</p></div>
+    </main>
+    <!-- Chat input area pinned below chat messages -->
+    <div class="input-container mt-4 flex">
+        <textarea id="user-input" class="flex-grow p-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="Type your question here..." rows="2"></textarea>
+        <button id="send-button" class="bg-blue-500 hover:bg-blue-600 text-white px-4 rounded-r-lg transition">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+    <script>
+      // Auto-focus the chat input on load
+      document.addEventListener('DOMContentLoaded', function() {
+        var input = document.getElementById('user-input');
+        if(input) input.focus();
+      });
+    </script>
+    <div class="suggestions-area">
+        <p class="suggestions-title">Try asking about:</p>
+        <div class="suggestion-buttons">
+            <button class="suggestion-btn">About our school</button>
+            <button class="suggestion-btn">Purple Mash help</button>
+            <button class="suggestion-btn">School hours</button>
+            <button class="suggestion-btn">Math tutoring</button>
+        </div>
+    </div>
+    <footer>
+        Powered by Gemini | © 2023 Bryneven Primary School
+    </footer>
+</div>
+<script type="module" src="chat.js"></script>
+</body>
+</html>

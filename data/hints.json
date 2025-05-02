@@ -1,0 +1,22 @@
+{
+  "q1": [
+    "Think about the main concept involved.",
+    "Recall the definition related to this topic.",
+    "The answer involves photosynthesis."
+  ],
+  "q2": [
+    "Consider the formula you usually use.",
+    "Check if you need to rearrange the equation.",
+    "Use F=ma to solve this."
+  ],
+  "english_1": ["Think of a word that means the same as 'happy'."],
+  "english_2": ["Remember the rule: 'i' before 'e' except after 'c'."],
+  "english_3": ["What is the special plural form for 'child'?"],
+  "english_4": ["Check each sentence for correct use of commas and the Oxford comma.", "Pay attention to how commas are used in lists.", "Look for a sentence with correct punctuation throughout."],
+  "english_5": ["Which word means the opposite of 'difficult'?"],
+  "english_6": ["An adjective describes a noun. Which option does that?"],
+  "english_7": ["What is the past tense of 'go'?"],
+  "english_8": ["A question sentence usually ends with a question mark.", "Look for a sentence that asks something."],
+  "english_9": ["The main verb shows the action in the sentence."],
+  "english_10": ["Use 'an' before words that start with a vowel sound."]
+}

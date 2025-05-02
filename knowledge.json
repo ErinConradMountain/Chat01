@@ -1,0 +1,93 @@
+{
+  "school": {
+    "name": "Bryneven Primary School",
+    "established": 1968,
+    "motto": "Preparing our children for life",
+    "type": "Public Primary School",
+    "location": {
+      "address": "Corner of Ballyclare and Ballina Roads, Bryanston, Johannesburg, 2021, South Africa",
+      "city": "Johannesburg",
+      "suburb": "Bryanston",
+      "country": "South Africa"
+    },
+    "contact": {
+      "phone": "+27 11 463 1453",
+      "email": "reception@bryneven.co.za",
+      "website": "https://www.bryneven.co.za"
+    },
+    "leadership": {
+      "principal": "Mr. Naeem Nakooda",
+      "deputy_principal": "Mrs. Charlene Kotze",
+      "school_governing_body": {
+        "chairperson": "Mrs. Chawada Musvaire",
+        "treasurer": "Mr. Johan Pretorius",
+        "secretary": "Ms. Prabashinee Govender"
+      },
+      "grade_heads": {
+        "Grade R": "Mrs. Herdman",
+        "Grade 1": "Mrs. Wrathall",
+        "Grade 2": "Miss Mac Arthur",
+        "Grade 3": "Mrs. Agostinetto",
+        "Grade 4": "Mrs. Jonathan",
+        "Grade 5": "Mr. Botha",
+        "Grade 6": "Mrs. Suklal",
+        "Grade 7": "Mrs. Liversage"
+      }
+    },
+    "curriculum": [
+      "Home Language",
+      "First Additional Language",
+      "Mathematics",
+      "Life Skills",
+      "Natural Sciences and Technology",
+      "Social Sciences"
+    ],
+    "sports": [
+      "Swimming",
+      "Cricket",
+      "Tennis",
+      "Soccer",
+      "Netball",
+      "Hockey",
+      "Athletics",
+      "Cross Country"
+    ],
+    "cultural_activities": [
+      "Choir",
+      "Chess",
+      "Coding",
+      "Art Club",
+      "Marimba Band"
+    ],
+    "private_lessons": [
+      "Judo",
+      "Drama",
+      "Dance Mouse",
+      "Ballet",
+      "Flip Flop Gymnastics",
+      "Transition Football",
+      "Tennis"
+    ],
+    "fees": {
+      "2023": {
+        "Grade R": {
+          "annual": 52635,
+          "monthly": 4785
+        },
+        "Grades 1-7": {
+          "annual": 36960,
+          "monthly": 3360
+        }
+      }
+    },
+    "community_engagement": [
+      "World Book Day Celebrations",
+      "Fundraising Activities",
+      "School Market Days"
+    ],
+    "social_media": {
+      "facebook": "https://www.facebook.com/BrynevenPrimaryOfficial/",
+      "linkedin": "https://za.linkedin.com/company/bryneven-primary-school"
+    }
+  }
+}

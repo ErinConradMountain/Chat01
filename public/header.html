@@ -1,0 +1,41 @@
+<!-- Centralized Header Component -->
+<div class="main-header-align">
+  <header class="flex flex-col items-center bg-blue-100 rounded-b-xl shadow-md mb-6 px-8 py-6 md:px-12 md:py-8 lg:px-16 lg:py-10">
+    <div class="flex flex-col items-center w-full">
+      <span class="bg-blue-600 text-white rounded-full p-2 text-2xl mb-2"><i class="fas fa-school"></i></span>
+      <h1 class="text-3xl md:text-4xl font-bold text-white bg-blue-600 px-4 py-1 rounded w-auto text-center mx-auto">Bryneven Primary School Helper</h1>
+    </div>
+    <p class="text-gray-700 text-base md:text-lg mb-4 w-full text-center">Your friendly school information and tutoring assistant</p>
+    <nav class="main-menu w-full">
+      <ul class="flex flex-wrap justify-center gap-4 md:gap-6 text-base md:text-lg font-semibold text-blue-700">
+        <li><a href="index.html" class="menu-link" id="menu-general">General Discussion</a></li>
+        <li><a href="homework.html" class="menu-link" id="menu-homework">Homework</a></li>
+        <li><a href="knowledge.html" class="menu-link" id="menu-knowledge">Knowledge</a></li>
+        <li><a href="investigations.html" class="menu-link" id="menu-investigations">Investigations</a></li>
+        <li><a href="art.html" class="menu-link" id="menu-art">Art</a></li>
+      </ul>
+    </nav>
+  </header>
+</div>
+<style>
+@media (max-width: 1024px) {
+  .main-header-align {
+    max-width: 100vw !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+@media (max-width: 600px) {
+  .main-header-align {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  header h1 {
+    font-size: 1.5rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+</style>

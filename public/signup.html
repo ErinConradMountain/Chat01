@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Basic responsive form styling */
+    .signup-container {
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 2em;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .signup-container label {
+      display: block;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+    }
+    .signup-container select, .signup-container input, .signup-container button {
+      width: 100%;
+      padding: 0.5em;
+      margin-bottom: 1.5em;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .signup-container button {
+      background: #3b82f6;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .signup-container { padding: 1em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="signup-container">
+    <h2 id="formTitle">Login</h2>
+    <form id="loginForm">
+      <label for="loginName">Username</label>
+      <input id="loginName" name="loginName" type="text" required>
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" name="loginPassword" type="password" required>
+      <label for="loginRole">Role</label>
+      <select id="loginRole" name="loginRole" required>
+        <option value="">Select Role</option>
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+      </select>
+      <label for="loginSchool">School</label>
+      <select id="loginSchool" name="loginSchool" required>
+        <option value="">Select School</option>
+      </select>
+      <label for="loginGrade">Grade</label>
+      <select id="loginGrade" name="loginGrade" required>
+        <option value="">Select Grade</option>
+      </select>
+      <button type="submit">Login</button>
+    </form>
+    <form id="signUpForm" style="display:none;">
+      <label for="signUpName">Username</label>
+      <input id="signUpName" name="signUpName" type="text" required>
+      <label for="signUpPassword">Password</label>
+      <input id="signUpPassword" name="signUpPassword" type="password" required>
+      <label for="signUpRole">Role</label>
+      <select id="signUpRole" name="signUpRole" required>
+        <option value="">Select Role</option>
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+      </select>
+      <label for="signUpSchool">School</label>
+      <select id="signUpSchool" name="signUpSchool" required>
+        <option value="">Select School</option>
+      </select>
+      <label for="signUpGrade">Grade</label>
+      <select id="signUpGrade" name="signUpGrade" required>
+        <option value="">Select Grade</option>
+      </select>
+      <button type="submit">Sign Up</button>
+    </form>
+    <button id="toggleFormBtn" style="background:none;border:none;color:#3b82f6;cursor:pointer;">Sign Up</button>
+    <div id="formMessage" style="color:#b91c1c;margin-top:0.5em;display:none;"></div>
+  </div>
+  <script>
+    // Populate school and grade dropdowns for both forms
+    fetch('data/schools.json')
+      .then(res => res.json())
+      .then(schools => {
+        const schoolSelects = [document.getElementById('loginSchool'), document.getElementById('signUpSchool')];
+        schoolSelects.forEach(schoolSelect => {
+          schools.forEach(school => {
+            const opt = document.createElement('option');
+            opt.value = school.id;
+            opt.textContent = school.name;
+            schoolSelect.appendChild(opt.cloneNode(true));
+          });
+        });
+      });
+    function populateGrades(selectId) {
+      var gradeSelect = document.getElementById(selectId);
+      for (var i = 1; i <= 12; i++) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = 'Grade ' + i;
+        gradeSelect.appendChild(opt);
+      }
+    }
+    populateGrades('loginGrade');
+    populateGrades('signUpGrade');
+
+    // Toggle between login and sign up forms
+    const loginForm = document.getElementById('loginForm');
+    const signUpForm = document.getElementById('signUpForm');
+    const toggleFormBtn = document.getElementById('toggleFormBtn');
+    const formTitle = document.getElementById('formTitle');
+    const formMessage = document.getElementById('formMessage');
+    let isLogin = true;
+    toggleFormBtn.onclick = function() {
+      isLogin = !isLogin;
+      loginForm.style.display = isLogin ? '' : 'none';
+      signUpForm.style.display = isLogin ? 'none' : '';
+      formTitle.textContent = isLogin ? 'Login' : 'Sign Up';
+      toggleFormBtn.textContent = isLogin ? 'Sign Up' : 'Back to Login';
+      formMessage.style.display = 'none';
+    };
+
+    // Login logic
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('loginName').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const role = document.getElementById('loginRole').value;
+      const schoolId = document.getElementById('loginSchool').value;
+      const grade = document.getElementById('loginGrade').value;
+      if (!name || !password || !role || !schoolId || !grade) {
+        formMessage.textContent = 'Please fill in all fields.';
+        formMessage.style.color = '#b91c1c';
+        formMessage.style.display = '';
+        return;
+      }
+      const users = JSON.parse(localStorage.getItem('users') || '{}');
+      if (!users[name]) {
+        formMessage.textContent = 'User not found. Please sign up first.';
+        formMessage.style.color = '#b91c1c';
+        formMessage.style.display = '';
+        return;
+      }
+      if (users[name].password !== password) {
+        formMessage.textContent = 'Incorrect password.';
+        formMessage.style.color = '#b91c1c';
+        formMessage.style.display = '';
+        return;
+      }
+      // Save user profile for chat page
+      const userProfile = { uid: users[name].uid, name, role, schoolId, grade };
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
+      formMessage.style.display = 'none';
+      window.location.href = 'index.html';
+    });
+    // Sign up logic
+    signUpForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('signUpName').value.trim();
+      const password = document.getElementById('signUpPassword').value;
+      const role = document.getElementById('signUpRole').value;
+      const schoolId = document.getElementById('signUpSchool').value;
+      const grade = document.getElementById('signUpGrade').value;
+      if (!name || !password || !role || !schoolId || !grade) {
+        formMessage.textContent = 'Please fill in all fields.';
+        formMessage.style.color = '#b91c1c';
+        formMessage.style.display = '';
+        return;
+      }
+      let users = JSON.parse(localStorage.getItem('users') || '{}');
+      if (users[name]) {
+        formMessage.textContent = 'Username already exists. Please choose another.';
+        formMessage.style.color = '#b91c1c';
+        formMessage.style.display = '';
+        return;
+      }
+      const uid = 'uid-' + Math.random().toString(36).slice(2,10);
+      users[name] = { password, uid, role, schoolId, grade };
+      localStorage.setItem('users', JSON.stringify(users));
+      formMessage.textContent = 'Sign up successful! You can now log in.';
+      formMessage.style.color = '#16a34a';
+      formMessage.style.display = '';
+      // Optionally, switch to login form after sign up
+      setTimeout(() => {
+        toggleFormBtn.click();
+      }, 1200);
+    });
+  </script>
+</body>
+</html>

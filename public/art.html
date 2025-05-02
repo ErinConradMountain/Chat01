@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art Mode - Bryneven Helper</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- Shared header will be loaded here -->
+<div id="header-container"></div>
+<script>
+  fetch('header.html')
+    .then(response => response.text())
+    .then(html => { document.getElementById('header-container').innerHTML = html; });
+</script>
+<div class="chat-container">
+    <main id="chat-area">
+        <div class="message bot"><p>Hi there! 👋 I'm the Bryneven Primary School Helper! ...</p></div>
+        <div class="message user"><p>Thank you!</p></div>
+    </main>
+    <div class="suggestions-area">
+        <p class="suggestions-title">Try asking about:</p>
+        <div class="suggestion-buttons">
+            <button class="suggestion-btn">About our school</button>
+            <button class="suggestion-btn">Purple Mash help</button>
+            <button class="suggestion-btn">School hours</button>
+            <button class="suggestion-btn">Math tutoring</button>
+        </div>
+    </div>
+    <div class="input-area">
+        <textarea id="user-input" placeholder="Type your question here..." rows="1"></textarea>
+        <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    <footer>
+        Powered by Gemini | © 2023 Bryneven Primary School
+    </footer>
+</div>
+<script type="module" src="./chat.js"></script>
+<!-- Removed inline script that overwrites chat area. Section greeting will be handled in chat.js. -->
+</body>
+</html>

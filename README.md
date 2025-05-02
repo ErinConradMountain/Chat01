@@ -1,4 +1,7 @@
-HEAD
+# Note
+
+For comprehensive and up-to-date documentation, please refer to DOCUMENTATION.md. All important information about the project, its features, and usage is maintained there.
+
 # Bryneven Primary School Helper Chatbot
 
 A friendly chatbot assistant for Bryneven Primary School students, built using HTML, CSS, JavaScript, and the Gemini 1.5 Pro API.
@@ -44,6 +47,26 @@ git clone [your-repository-url]
 - `styles.css` - CSS styles and animations
 - `data.js` - School knowledge base and robotics information
 - `chat.js` - Chat functionality and API integration
+
+## Weekly Curation & Iteration
+
+To keep the chatbot's knowledge base fresh and accurate, perform a weekly review of flagged logs and update as needed.
+
+### How to Run Curation
+
+1. Ensure flagged logs are saved in `flagged_logs.txt` (update `logger.js` if needed).
+2. Run the curation script:
+   ```bash
+   node curate.js
+   ```
+   - The script will guide you through reviewing flagged logs, updating knowledge files, and suggesting prompt tweaks.
+   - Optionally, collect your best Q→A pairs for future fine-tuning.
+
+### Reminder
+- Set a recurring calendar reminder (e.g., every Monday) for a curation session.
+- At least one team member should be available for this review each week.
+
+---
 
 ## Security Notes
 

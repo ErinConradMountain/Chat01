@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Mode - Bryneven Helper</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- Shared header will be loaded here -->
+<div id="header-container"></div>
+<div class="chat-container">
+    <main id="chat-area">
+        <div class="message bot"><p>Hi there! 👋 I'm the Bryneven Primary School Helper! ...</p></div>
+        <div class="message user"><p>Thank you!</p></div>
+        <div id="chatContainer"></div>
+    </main>
+    <!-- Subject selection area (replaces suggestions) -->
+    <div id="dynamic-area" class="flex flex-wrap justify-center gap-3 my-4">
+        <!-- Subject or answer buttons will be rendered here by JS -->
+    </div>
+    <!-- User-friendly action bar for knowledge questions (only quick action buttons) -->
+    <div id="knowledge-action-bar" style="display:none;" class="flex items-center justify-center my-4 gap-6">
+        <input id="knowledge-action-input" type="text" class="hidden" />
+        <button id="knowledge-action-hint" class="knowledge-action-btn small-action-btn" title="Get a hint">💡 Hint</button>
+        <button id="knowledge-action-explain" class="knowledge-action-btn small-action-btn" title="Get an explanation">❓ Explain</button>
+        <button id="knowledge-action-skip" class="knowledge-action-btn small-action-btn" title="Skip question">⏭️ Skip</button>
+    </div>
+    <footer>
+        Powered by Gemini | © 2023 Bryneven Primary School
+    </footer>
+</div>
+<script>
+// Dynamically load the shared header
+fetch('header.html')
+  .then(res => res.text())
+  .then(html => {
+    document.getElementById('header-container').innerHTML = html;
+  });
+</script>
+<script type="module" src="./knowledge.js"></script>
+</body>
+</html>
