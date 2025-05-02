@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     sendBtn.addEventListener('click', sendMessage);
 });
 
+const chatContainer = document.querySelector('.chat-container');
+
 function sendSuggestion(text) {
     userInput.value = text;
     sendMessage();
