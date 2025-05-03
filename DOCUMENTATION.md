@@ -72,7 +72,7 @@ ChatBot Version 1 follows a modular, layered architecture that separates concern
 - Users interact with the UI in the browser.
 - The frontend sends requests to backend APIs for chat and dynamic features.
 - The backend processes requests, accesses data sources, and returns responses.
-- Static content (quizzes, knowledge) is loaded directly by the frontend from public data files.
+- Static content (quizzes, knowledge) is loaded directly by the frontend from docs data files.
 
 This architecture allows for clear separation of concerns, easy customization of data/content, and straightforward extension of features.
 
@@ -114,8 +114,7 @@ This architecture allows for clear separation of concerns, easy customization of
 - **api/chat.js**: Main chat API logic.
 - **data/homework.json**: Homework questions and answers.
 - **data/schools.json**: School data for context.
-- **docs/data/english_questions.js**: Static English quiz questions.
-- **docs/data/knowledge.json**: Knowledge base for frontend use.
+- **docs/data/english_questions.js**: Knowledge base for frontend use.
 - **art_knowledge.json, investigations_knowledge.json, homework_knowledge.json, knowledge_knowledge.json**: Knowledge sources for different sections.
 - **knowledge_knowledge.json**: **Stores structured documentation about the application's architecture, API integrations, and technology viability. Consult and update this file when adding or modifying integrations. See entry dated 2025-05-02 for an example.**
 

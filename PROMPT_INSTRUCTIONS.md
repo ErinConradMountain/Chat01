@@ -22,7 +22,7 @@ This document defines a standardized set of instructions and contextual informat
 
 ## 4. Code & API Conventions
 - **File Locations:** 
-  - Frontend assets under `/public` and root HTML/JS.
+  - Frontend assets under `/docs` and root HTML/JS.
   - Styles in `styles.css` using Tailwind utility classes.
   - Backend routes in `/api/*.js` and `server.js`.
 - **Configuration:** Use `config.js` for environment variables, API keys, and base URLs.
