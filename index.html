@@ -7,13 +7,13 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-    <link rel="shortcut icon" href="public/logo.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="docs/logo.svg" type="image/svg+xml">
 </head>
 <body>
 <!-- Shared header will be loaded here -->
 <div id="header-container"></div>
 <script>
-  fetch('public/header.html')
+  fetch('docs/header.html')
     .then(res => res.text())
     .then(html => {
       document.getElementById('header-container').innerHTML = html;
@@ -120,8 +120,8 @@
 <!-- Add confetti script for signup success animation -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-<script src="public/data.js" type="module"></script>
-<script src="public/chat.js" type="module"></script>
+<script src="docs/data.js" type="module"></script>
+<script src="docs/chat.js" type="module"></script>
 
 <script>
 // Show login container if not logged in

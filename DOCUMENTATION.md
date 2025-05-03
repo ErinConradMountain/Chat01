@@ -30,7 +30,7 @@ ChatBot Version 1 is a web-based educational chatbot platform designed to assist
 
 - **api/**: Backend API endpoints (e.g., chat logic, Vercel deployment config)
 - **data/**: Static data files (e.g., homework, schools)
-- **public/**: Frontend assets (HTML, JS, CSS, images, and data for UI)
+- **docs/**: Frontend assets (HTML, JS, CSS, images, and data for UI)
   - **data/**: Frontend-accessible data (e.g., quiz questions, knowledge)
 - **vercel-proxy/**: (Purpose not detailed; likely for Vercel deployment)
 - **config.js**: App configuration
@@ -47,11 +47,11 @@ ChatBot Version 1 is a web-based educational chatbot platform designed to assist
 ChatBot Version 1 follows a modular, layered architecture that separates concerns between the frontend, backend, and data sources:
 
 ### 1. Frontend (Client Side)
-- Located in the `public/` directory.
+- Located in the `docs/` directory.
 - Built with HTML, JavaScript, and CSS for the user interface.
 - Handles user interactions, displays chat, quizzes, and knowledge sections.
 - Fetches data and communicates with the backend via HTTP requests (e.g., chat API).
-- Loads static data (like quiz questions) directly from files in `public/data/`.
+- Loads static data (like quiz questions) directly from files in `docs/data/`.
 
 ### 2. Backend (Server Side)
 - Main entry point: `server.js`.
@@ -61,9 +61,9 @@ ChatBot Version 1 follows a modular, layered architecture that separates concern
 - Uses configuration and logging utilities (`config.js`, `logger.js`).
 
 ### 3. Data Sources
-- Static JSON and JS files in `data/`, `public/data/`, and root directory (e.g., `art_knowledge.json`).
+- Static JSON and JS files in `data/`, `docs/data/`, and root directory (e.g., `art_knowledge.json`).
 - Store knowledge bases, quiz questions, homework, and other content.
-- Backend and frontend both access these files as needed (frontend uses only files in `public/`).
+- Backend and frontend both access these files as needed (frontend uses only files in `docs/`).
 
 ### 4. Deployment
 - Designed for easy deployment (e.g., Vercel) with configuration in `vercel.json` and optional proxy logic in `vercel-proxy/`.
@@ -83,30 +83,30 @@ This architecture allows for clear separation of concerns, easy customization of
 ### 1. Chat Interface
 - Real-time chat with the bot via the frontend and backend API.
 - Handles user queries and provides responses based on integrated knowledge bases.
-- Main logic: `api/chat.js`, `public/chat.js`, `public/index.html`.
+- Main logic: `api/chat.js`, `docs/chat.js`, `docs/index.html`.
 
 ### 2. Knowledge Quizzes
 - Multiple-choice quizzes (e.g., English) for self-assessment.
-- Static questions stored in `public/data/english_questions.js`.
+- Static questions stored in `docs/data/english_questions.js`.
 - Feedback provided for each answer.
-- To add or edit questions, modify `public/data/english_questions.js` (see [Data File Formats & Customization](#data-file-formats--customization)).
+- To add or edit questions, modify `docs/data/english_questions.js` (see [Data File Formats & Customization](#data-file-formats--customization)).
 
 ### 3. Homework Help
-- Homework data in `data/homework.json` and `public/data/homework.json`.
+- Homework data in `data/homework.json` and `docs/data/homework.json`.
 - UI for students to get help with homework questions.
-- Main logic: `public/homework.html`, `public/data/homework.json`.
+- Main logic: `docs/homework.html`, `docs/data/homework.json`.
 
 ### 4. Art Curation
-- Art-related knowledge and curation via `art_knowledge.json` and `public/art.html`.
-- Main logic: `public/art.html`, `art_knowledge.json`.
+- Art-related knowledge and curation via `art_knowledge.json` and `docs/art.html`.
+- Main logic: `docs/art.html`, `art_knowledge.json`.
 
 ### 5. Investigations
-- Investigation knowledge and UI in `investigations_knowledge.json` and `public/investigations.html`.
-- Main logic: `public/investigations.html`, `investigations_knowledge.json`.
+- Investigation knowledge and UI in `investigations_knowledge.json` and `docs/investigations.html`.
+- Main logic: `docs/investigations.html`, `investigations_knowledge.json`.
 
 ### 6. Knowledge Base
 - General knowledge in `knowledge.json` and `knowledge_knowledge.json`.
-- Accessible via the chat and knowledge UI (`public/knowledge.html`).
+- Accessible via the chat and knowledge UI (`docs/knowledge.html`).
 
 ---
 
@@ -114,8 +114,8 @@ This architecture allows for clear separation of concerns, easy customization of
 - **api/chat.js**: Main chat API logic.
 - **data/homework.json**: Homework questions and answers.
 - **data/schools.json**: School data for context.
-- **public/data/english_questions.js**: Static English quiz questions.
-- **public/data/knowledge.json**: Knowledge base for frontend use.
+- **docs/data/english_questions.js**: Static English quiz questions.
+- **docs/data/knowledge.json**: Knowledge base for frontend use.
 - **art_knowledge.json, investigations_knowledge.json, homework_knowledge.json, knowledge_knowledge.json**: Knowledge sources for different sections.
 - **knowledge_knowledge.json**: **Stores structured documentation about the application's architecture, API integrations, and technology viability. Consult and update this file when adding or modifying integrations. See entry dated 2025-05-02 for an example.**
 
@@ -123,7 +123,7 @@ This architecture allows for clear separation of concerns, easy customization of
 
 ## Data File Formats & Customization
 
-### English Quiz Questions (`public/data/english_questions.js`)
+### English Quiz Questions (`docs/data/english_questions.js`)
 - Format: Array of objects with `question`, `options`, `answer`, and `feedback` fields.
 - Example:
   ```js
@@ -145,7 +145,7 @@ This architecture allows for clear separation of concerns, easy customization of
 ## Running & Developing the App
 1. Install dependencies: `npm install`
 2. Start the server: `node server.js` (or use a script from `package.json`)
-3. Access the app via `index.html` in the `public/` folder.
+3. Access the app via `index.html` in the `docs/` folder.
 4. For deployment, see `vercel.json` and `vercel-proxy/`.
 
 ---
@@ -170,8 +170,8 @@ This architecture allows for clear separation of concerns, easy customization of
 ## Notes
 - Update this documentation as new features or files are added.
 - For detailed API usage, see inline comments in `api/` and `server.js`.
-- For UI changes, edit files in `public/`.
-- For quiz logic, see the TODO in `public/data/english_questions.js` for future improvements (e.g., scoring, result summary).
+- For UI changes, edit files in `docs/`.
+- For quiz logic, see the TODO in `docs/data/english_questions.js` for future improvements (e.g., scoring, result summary).
 
 ---
 
@@ -180,7 +180,7 @@ This architecture allows for clear separation of concerns, easy customization of
 To expand the knowledge section with new subjects or update existing ones, follow these steps:
 
 ### 1. Create or Update Subject Question Files
-- For each subject, create a new file in `public/data/` (e.g., `science_questions.js`).
+- For each subject, create a new file in `docs/data/` (e.g., `science_questions.js`).
 - The file should export an array of question objects. Each object must have:
   - `question`: The question text.
   - `options`: An array of answer choices (e.g., `["A) ...", "B) ...", ...]`).
@@ -200,7 +200,7 @@ To expand the knowledge section with new subjects or update existing ones, follo
   ```
 
 ### 2. Register the Subject in the App
-- Open `public/knowledge.js`.
+- Open `docs/knowledge.js`.
 - Add the new subject name to the `subjects` array (e.g., `'Science'`).
 - Update the `loadQuestionsForSubject(subject)` function to import your new questions file:
   ```js
@@ -223,8 +223,8 @@ To expand the knowledge section with new subjects or update existing ones, follo
 ### 5. Summary Table
 | Step | File/Location | Action |
 |------|---------------|--------|
-| 1    | `public/data/` | Create or update `[subject]_questions.js` |
-| 2    | `public/knowledge.js` | Register subject and import questions |
+| 1    | `docs/data/` | Create or update `[subject]_questions.js` |
+| 2    | `docs/knowledge.js` | Register subject and import questions |
 | 3    | `knowledge.json` or `knowledge_knowledge.json` | (Optional) Add backend knowledge |
 | 4    | App UI | Test subject in browser |
 

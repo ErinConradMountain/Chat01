@@ -7,8 +7,8 @@ const PORT = process.env.PORT || 3000;
 // Parse JSON request bodies
 app.use(express.json());
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from the docs directory
+app.use(express.static(path.join(__dirname, 'docs')));
 
 // Handle API routes
 app.post('/api/chat', (req, res) => {
@@ -28,10 +28,10 @@ app.post('/api/chat', (req, res) => {
   });
 });
 
-// Serve HTML files directly from public directory
+// Serve HTML files directly from docs directory
 app.get('/:page.html', (req, res, next) => {
   const pageName = req.params.page;
-  const filePath = path.join(__dirname, 'public', `${pageName}.html`);
+  const filePath = path.join(__dirname, 'docs', `${pageName}.html`);
   
   // Check if the file exists
   try {
@@ -47,12 +47,12 @@ app.get('/:page.html', (req, res, next) => {
 
 // Redirect root to index.html
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'docs', 'index.html'));
 });
 
 // Catch-all handler for 404s
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+  res.status(404).sendFile(path.join(__dirname, 'docs', '404.html'));
 });
 
 app.listen(PORT, () => {
