@@ -16,6 +16,8 @@
 9. [Troubleshooting](#troubleshooting)
 10. [Notes](#notes)
 11. [How to Add Knowledge for New Subjects](#how-to-add-knowledge-for-new-subjects-knowledge-section)
+12. [Responsive Design Implementation](#responsive-design-implementation)
+13. [Knowledge Section UI Behavior (2025 Update)](#knowledge-section-ui-behavior-2025-update)
 
 ---
 
@@ -227,3 +229,91 @@ To expand the knowledge section with new subjects or update existing ones, follo
 | 4    | App UI | Test subject in browser |
 
 This process ensures all knowledge for quizzes and free-text queries is organized, easy to update, and consistent across subjects.
+
+---
+
+## Responsive Design Implementation
+
+### Base Font System
+The application now uses a responsive font sizing system with three breakpoints:
+- Desktop (> 900px): 12px base
+- Tablet (480px - 900px): 11px base
+- Mobile (< 480px): 10px base
+
+All component measurements are relative to these base sizes using rem units, ensuring consistent scaling across the application.
+
+### Header Optimization
+- Headers now properly wrap text and maintain readability at all zoom levels
+- Navigation menu items adjust spacing and wrap cleanly on narrow screens
+- Maintained minimum touch target sizes of 24px height
+
+### Content Containers
+Content areas now use a flexible width system:
+- Desktop: 95vw max-width
+- Tablet: 98vw max-width
+- Mobile: 100vw max-width
+
+This ensures optimal content display while preventing horizontal scrolling.
+
+### Component Scaling
+Components now scale proportionally across device sizes:
+- Buttons maintain minimum touch target size of 24px
+- Text remains readable with minimum size of 9px
+- Message bubbles adjust width based on screen size
+- Input areas maintain usability across devices
+
+### Implementation Details
+1. **CSS Variables**
+   ```css
+   :root {
+       --base-font-size: 12px;
+       --mobile-font-size: 11px;
+       --small-font-size: 10px;
+   }
+   ```
+
+2. **Viewport Configuration**
+   ```html
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+   ```
+
+3. **Media Queries**
+   Three main breakpoints ensure smooth transitions between device sizes:
+   - Large Desktop: > 900px
+   - Tablet/Small Desktop: 480px - 900px
+   - Mobile: < 480px
+
+### Testing Guidelines
+1. Test all pages at the following zoom levels:
+   - 100% (standard view)
+   - 75% (reduced view)
+   - 125% (enlarged view)
+   - 150% (maximum supported zoom)
+
+2. Verify on common device sizes:
+   - Desktop (1920x1080, 1366x768)
+   - Tablet (1024x768, 768x1024)
+   - Mobile (375x667, 360x640)
+
+3. Check responsive behavior:
+   - Text wrapping
+   - Button alignment
+   - Navigation menu wrapping
+   - Message bubble scaling
+   - Input area usability
+
+### Known Limitations
+- Minimum supported screen width: 320px
+- Maximum recommended zoom level: 150%
+- Text scaling limits to maintain usability
+
+---
+
+## Knowledge Section UI Behavior (2025 Update)
+
+- The Knowledge section now uses a ChatGPT-style layout: when a user selects a subject, only a single question bubble (styled as a bot message) and a row of answer option buttons are shown.
+- There are no extra colored containers, quiz guides, or repeated explanations. The UI is clean and focused on the Q&A flow, matching the look and feel of ChatGPT.
+- **Guideline:** Do not add redundant system or bot messages, quiz guides, or result containers. Only show the question and options as described.
+- If you update the UI or logic, ensure that the knowledge section remains clean and focused on the Q&A flow, with a single message bubble per question.
+
+---

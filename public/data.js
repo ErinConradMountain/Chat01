@@ -109,7 +109,7 @@ export async function buildKnowledgeCorpus() {
 
     // 1.1 Read and parse knowledge.json
     try {
-        const jsonResp = await fetch('/data/knowledge.json');
+        const jsonResp = await fetch('./data/knowledge.json');
         if (!jsonResp.ok) throw new Error('knowledge.json not found');
         const jsonData = await jsonResp.json();
         corpus = corpus.concat(flattenJson(jsonData));
@@ -119,7 +119,7 @@ export async function buildKnowledgeCorpus() {
 
     // 1.2 Read knowledge.txt line-by-line
     try {
-        const txtResp = await fetch('/data/knowledge.txt');
+        const txtResp = await fetch('./data/knowledge.txt');
         if (!txtResp.ok) throw new Error('knowledge.txt not found');
         const txtData = await txtResp.text();
         const lines = txtData.split(/\r?\n/).map(line => line.trim()).filter(Boolean);

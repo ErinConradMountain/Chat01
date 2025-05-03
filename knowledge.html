@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Knowledge Mode - Bryneven Helper</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -11,7 +11,7 @@
 <body>
 <!-- Shared header will be loaded here -->
 <div id="header-container"></div>
-<div class="chat-container">
+<div class="chat-container" id="knowledge-section">
     <main id="chat-area">
         <div class="message bot"><p>Hi there! 👋 I'm the Bryneven Primary School Helper! ...</p></div>
         <div class="message user"><p>Thank you!</p></div>
@@ -21,6 +21,8 @@
     <div id="dynamic-area" class="flex flex-wrap justify-center gap-3 my-4">
         <!-- Subject or answer buttons will be rendered here by JS -->
     </div>
+    <!-- Hints area for knowledge section -->
+    <div id="knowledge-hints" class="knowledge-hints-area px-4 py-2 text-sm text-gray-600 hidden"></div>
     <!-- User-friendly action bar for knowledge questions (only quick action buttons) -->
     <div id="knowledge-action-bar" style="display:none;" class="flex items-center justify-center my-4 gap-6">
         <input id="knowledge-action-input" type="text" class="hidden" />
@@ -35,12 +37,12 @@
 <img src="logo.png" alt="School Logo" class="logo">
 <script>
 // Dynamically load the shared header
-fetch('header.html')
+fetch('public/header.html')
   .then(res => res.text())
   .then(html => {
     document.getElementById('header-container').innerHTML = html;
   });
 </script>
-<script src="knowledge.js"></script>
+<script src="knowledge.js" type="module"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Homework Mode - Bryneven Helper</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -11,27 +11,26 @@
 <body>
 <!-- Shared header will be loaded here -->
 <div id="header-container"></div>
-<script>
-  fetch('header.html')
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById('header-container').innerHTML = html;
-    });
-</script>
-<div class="chat-container">
+
+<div class="chat-container homework-section" id="homework-section">
     <main id="chat-area">
         <div class="message bot"><p>Hi there! 👋 I'm the Bryneven Primary School Helper! ...</p></div>
         <div class="message user"><p>Thank you!</p></div>
     </main>
-    <div class="suggestions-area">
-        <p class="suggestions-title">Try asking about:</p>
-        <div class="suggestion-buttons">
-            <button class="suggestion-btn">About our school</button>
-            <button class="suggestion-btn">Purple Mash help</button>
-            <button class="suggestion-btn">School hours</button>
-            <button class="suggestion-btn">Math tutoring</button>
-        </div>
+    
+    <!-- Dynamic area for homework content -->
+    <div id="dynamic-area" class="flex flex-wrap justify-center gap-3 my-4">
+        <!-- Homework buttons will be rendered here by JS -->
     </div>
+    
+    <!-- User-friendly action bar for homework section -->
+    <div id="homework-action-bar" style="display:none;" class="flex items-center justify-center my-4 gap-6">
+        <input id="homework-action-input" type="text" class="hidden" />
+        <button id="homework-action-hint" class="homework-action-btn small-action-btn" title="Get a hint">💡 Hint</button>
+        <button id="homework-action-explain" class="homework-action-btn small-action-btn" title="Get an explanation">❓ Explain</button>
+        <button id="homework-action-skip" class="homework-action-btn small-action-btn" title="Skip question">⏭️ Skip</button>
+    </div>
+    
     <div class="input-area">
         <textarea id="user-input" placeholder="Type your question here..." rows="1"></textarea>
         <button id="send-button"><i class="fas fa-paper-plane"></i></button>
@@ -41,8 +40,15 @@
     </footer>
 </div>
 <img src="logo.png" alt="School Logo" class="logo">
-<script type="module" src="./chat.js"></script>
+
+<script>
+// Dynamically load the shared header
+fetch('header.html')
+  .then(res => res.text())
+  .then(html => {
+    document.getElementById('header-container').innerHTML = html;
+  });
+</script>
 <script src="homework.js"></script>
-<!-- Removed inline script that overwrites chat area. Section greeting will be handled in chat.js. -->
 </body>
 </html>

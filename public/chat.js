@@ -68,7 +68,47 @@ let pastedContent = "";
 let activeDiscussionText = "";
 
 // Replace direct Gemini API URL with backend endpoint
-const BACKEND_CHAT_API_URL = "/api/chat";
+// For GitHub Pages compatibility, point to a deployed backend
+let BACKEND_CHAT_API_URL = "https://bryneven-chatbot-api.vercel.app/api/chat";
+// For local development, change to true to use local endpoint
+const USE_LOCAL_API = true; 
+if (USE_LOCAL_API) {
+    BACKEND_CHAT_API_URL = "/api/chat";
+}
+
+// Add fallback mechanism in case the API call fails
+async function callChatAPI(prompt, maxTokens = 300, temp = 0.3) {
+    console.log("⚙️ Attempting API call...");
+    try {
+        const response = await fetch(BACKEND_CHAT_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                contents: [
+                    { role: "user", parts: [{ text: prompt }] }
+                ],
+                generationConfig: {
+                    maxOutputTokens: maxTokens,
+                    temperature: temp
+                }
+            }),
+            // Add longer timeout for slow connections
+            signal: AbortSignal.timeout(10000)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+    } catch (err) {
+        console.error("❌ API call failed:", err);
+        return null;
+    }
+}
 
 // For memory: store last 3 user and assistant messages
 function getRecentHistory() {
@@ -151,7 +191,10 @@ async function testGeminiAPI(prompt) {
                     maxOutputTokens: 300,
                     temperature: 0.3
                 }
-            })
+            }),
+            // Add mode: 'cors' with credentials to ensure CORS is handled properly
+            mode: 'cors',
+            credentials: 'include'
         });
         const data = await response.json();
         let reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't understand that.";
@@ -160,7 +203,8 @@ async function testGeminiAPI(prompt) {
         return reply;
     } catch (err) {
         console.error("❌ Gemini API call failed:", err);
-        return "Oops! I had a problem thinking right now.";
+        // If external API fails, use local fallback
+        return "Oops! I had a problem thinking right now. Let me try again with my local knowledge.";
     }
 }
 
@@ -181,11 +225,13 @@ async function generateInitialQuestions(text) {
                     temperature: 0.4,
                     maxOutputTokens: 300
                 }
-            })
+            }),
+            mode: 'cors',
+            credentials: 'include'
         });
         const data = await response.json();
         const questions = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        addBotMessage(questions || "I’ve got a few questions, but I need a little more info.");
+        addBotMessage(questions || "I've got a few questions, but I need a little more info.");
     } catch (err) {
         addBotMessage("Sorry, I couldn't come up with questions right now.");
     }
@@ -657,7 +703,9 @@ async function sendMessage() {
                         temperature: 0.4,
                         maxOutputTokens: 300
                     }
-                })
+                }),
+                mode: 'cors',
+                credentials: 'include'
             });
             const data = await response.json();
             let reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -754,7 +802,9 @@ async function sendMessage() {
                     maxOutputTokens: Math.max(200, Math.min(responseLength, 1000)),
                     temperature: 0.3
                 }
-            })
+            }),
+            mode: 'cors',
+            credentials: 'include'
         });
         const data = await response.json();
         let reply = data.candidates?.[0]?.content?.parts?.[0]?.text;

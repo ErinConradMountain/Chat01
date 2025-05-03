@@ -1,42 +1,61 @@
 // server.js
 const express = require('express');
 const path = require('path');
-require('dotenv').config();
-const fetch = require('node-fetch');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-const hintHandler = require('./api/hint.js').default;
-
+// Parse JSON request bodies
 app.use(express.json());
+
+// Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Proxy /api/chat to Gemini API
-app.post('/api/chat', async (req, res) => {
-  const API_KEY = process.env.GEMINI_API_KEY;
-  if (!API_KEY) {
-    return res.status(500).json({ error: 'Missing GEMINI_API_KEY in environment.' });
-  }
-  try {
-    const geminiResp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+// Handle API routes
+app.post('/api/chat', (req, res) => {
+  // For now, just return a simple response
+  res.json({
+    candidates: [
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(req.body),
+        content: {
+          parts: [
+            {
+              text: "I'm the Bryneven Primary School Helper! How can I assist you today?"
+            }
+          ]
+        }
       }
-    );
-    const data = await geminiResp.json();
-    res.json(data);
+    ]
+  });
+});
+
+// Serve HTML files directly from public directory
+app.get('/:page.html', (req, res, next) => {
+  const pageName = req.params.page;
+  const filePath = path.join(__dirname, 'public', `${pageName}.html`);
+  
+  // Check if the file exists
+  try {
+    if (require('fs').existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+    // If file doesn't exist, move to next handler
+    next();
   } catch (err) {
-    res.status(500).json({ error: 'API error', details: err.message });
+    next();
   }
 });
 
-app.get('/api/hint', (req, res) => {
-  hintHandler(req, res);
+// Redirect root to index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Catch-all handler for 404s
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Open your browser to see the ChatBot in action!`);
 });

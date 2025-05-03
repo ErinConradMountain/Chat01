@@ -89,5 +89,54 @@
       "facebook": "https://www.facebook.com/BrynevenPrimaryOfficial/",
       "linkedin": "https://za.linkedin.com/company/bryneven-primary-school"
     }
+  },
+  "programs": {
+    "academics": {
+      "subjects": [
+        "English",
+        "Afrikaans",
+        "Mathematics",
+        "Social Sciences",
+        "Natural Sciences",
+        "Life Skills",
+        "Creative Arts",
+        "Physical Education"
+      ],
+      "special_features": [
+        "STEM focus",
+        "Coding and Robotics Program",
+        "Reading Club"
+      ]
+    },
+    "extracurricular": [
+      "Soccer",
+      "Netball",
+      "Swimming",
+      "Cricket",
+      "Chess Club",
+      "Choir",
+      "Drama Club"
+    ]
+  },
+  "purple_mash": {
+    "description": "Purple Mash is an educational platform with tools and resources for computing curriculum. It includes 2Code for block-based programming activities.",
+    "access": "Each student receives login credentials at the beginning of the school year.",
+    "features": [
+      "Block coding interface for beginners",
+      "Built-in tutorials and guided activities",
+      "Project saving and sharing capabilities",
+      "Game design and animation tools"
+    ],
+    "classroom_use": "Used alongside Cubroid kits to teach programming concepts before applying them to physical robots."
+  },
+  "cubroid": {
+    "description": "Cubroid is a modular robotics kit designed for coding education. It consists of cubes that snap together with magnets.",
+    "components": [
+      "Motor blocks",
+      "Sensor blocks (light, sound, distance)",
+      "Controller block",
+      "Connection blocks"
+    ],
+    "programming": "Compatible with Scratch and block-based programming via Bluetooth connectivity."
   }
 }
