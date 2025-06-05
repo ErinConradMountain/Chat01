@@ -50,6 +50,18 @@ See `STYLE_DIRECTIVE.md` for detailed styling information and `DOCUMENTATION.md`
 Minimum supported screen width: 320px
 Maximum recommended zoom level: 150%
 
+## Hosting via GitHub Pages
+
+The `docs/` folder contains a static build of the site.
+To publish it using GitHub Pages:
+
+1. Open your repository on GitHub and go to **Settings** › **Pages**.
+2. Set the **Source** to the `main` branch and select `/docs` as the folder.
+3. Save. GitHub will display a URL like
+   `https://<username>.github.io/<repository>/`.
+4. After a minute, visit that link to see `index.html` with chat
+   functionality.
+
 ## Contributing
 
 Please read `DOCUMENTATION.md` for details on our code of conduct and the process for submitting pull requests.
