@@ -70,10 +70,11 @@ let activeDiscussionText = "";
 // Replace direct Gemini API URL with backend endpoint
 // For GitHub Pages compatibility, point to a deployed backend
 let BACKEND_CHAT_API_URL = "https://bryneven-chatbot-api.vercel.app/api/chat";
-// For local development, change to true to use local endpoint
-const USE_LOCAL_API = true; 
-if (USE_LOCAL_API) {
-    BACKEND_CHAT_API_URL = "/api/chat";
+// Automatically switch to local server when running on localhost
+const isLocalhost =
+  location.hostname === "localhost" || location.hostname === "127.0.0.1";
+if (isLocalhost) {
+  BACKEND_CHAT_API_URL = "/api/chat";
 }
 
 // Add fallback mechanism in case the API call fails
