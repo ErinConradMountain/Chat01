@@ -237,11 +237,8 @@ async function generateInitialQuestions(text) {
     }
 }
 
-// Initialize chat with welcome message
+// Initialize chat event handlers once the DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Enable chat input and send button for testing ---
-    if (userInput) userInput.disabled = false;
-    if (sendBtn) sendBtn.disabled = false;
     // Add event listeners only if elements exist
     if (userInput && sendBtn) {
         userInput.addEventListener('keydown', function(e) {
@@ -253,10 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
         sendBtn.addEventListener('click', sendMessage);
     }
 
-    testGeminiAPI("Hi! What is your name?").then(reply => {
-        console.log("Test Gemini reply:", reply);
-        addBotMessage(reply);
-    });
 
     // Suggestion buttons: trigger chat on click
     const suggestionMap = {
@@ -284,76 +277,27 @@ function setupAuthUI() {
     const loginContainer = document.getElementById('loginContainer');
     const loginError = document.getElementById('loginError');
     const showSignUpBtn = document.getElementById('showSignUpBtn');
-    const signUpModal = document.getElementById('signUpModal');
-    const signUpForm = document.getElementById('signUpForm');
-    const signUpError = document.getElementById('signUpError');
-    const cancelSignUpBtn = document.getElementById('cancelSignUpBtn');
 
-    // --- NEW: Populate school and grade dropdowns, add role selector, mascot update ---
-    const loginRole = document.getElementById('loginRole');
-    const loginSchool = document.getElementById('loginSchool');
-    const loginGrade = document.getElementById('loginGrade');
     let schoolsList = [];
-    // Populate school dropdown
-    function populateSchools() {
-        if (!loginSchool) return;
-        fetch('data/schools.json')
-            .then(res => {
-                if (!res.ok) throw new Error('Schools file not found');
-                return res.json();
-            })
-            .then(schools => {
-                schoolsList = schools;
-                var schoolOptions = '<option value="">Select School</option>';
-                for (var i = 0; i < schools.length; i++) {
-                    schoolOptions += '<option value="' + schools[i].id + '">' + schools[i].name + '</option>';
-                }
-                loginSchool.innerHTML = schoolOptions;
-            })
-            .catch(() => {
-                loginSchool.innerHTML = '<option value="">No schools found</option>';
-            });
-    }
-    // Populate grade dropdown
-    function populateGrades() {
-        if (!loginGrade) return;
-        var gradeOptions = '<option value="">Select Grade</option>';
-        for (var i = 1; i <= 12; i++) {
-            gradeOptions += '<option value="' + i + '">Grade ' + i + '</option>';
+    async function loadSchoolsList() {
+        if (schoolsList.length) return schoolsList;
+        try {
+            const resp = await fetch('data/schools.json');
+            schoolsList = await resp.json();
+        } catch {
+            schoolsList = [];
         }
-        loginGrade.innerHTML = gradeOptions;
+        return schoolsList;
     }
-    // Always populate on DOMContentLoaded
-    if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', () => {
-            populateSchools();
-            populateGrades();
-        });
-    } else {
-        populateSchools();
-        populateGrades();
-    }
-    // Mascot update on role change
-    if (loginRole) {
-        loginRole.addEventListener('change', function() {
-            const mascot = document.getElementById('wizardMascot') || document.getElementById('homeworkMascot');
-            if (mascot) {
-                if (loginRole.value === 'teacher') mascot.textContent = '📚🎓';
-                else mascot.textContent = '📚🎒';
-            }
-        });
-    }
+
     // Update login logic to check localStorage
     if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const name = document.getElementById('loginName').value.trim();
             const password = document.getElementById('loginPassword').value;
-            const role = loginRole ? loginRole.value : 'student';
-            const schoolId = loginSchool ? loginSchool.value : '';
-            const grade = loginGrade ? parseInt(loginGrade.value, 10) : null;
-            if (!name || !password || !role || !schoolId || !grade) {
-                loginError.textContent = 'Please fill in all fields (name, password, role, school, grade).';
+            if (!name || !password) {
+                loginError.textContent = 'Please enter your username and password.';
                 loginError.classList.remove('hidden');
                 return;
             }
@@ -373,27 +317,25 @@ function setupAuthUI() {
             currentUser = name;
             currentUserPassword = password;
             loginContainer.style.display = 'none';
+            const chatWrapper = document.getElementById('chatWrapper');
+            if (chatWrapper) chatWrapper.style.display = 'block';
             userInput.disabled = false;
             sendBtn.disabled = false;
             showLogoutButton(true);
-            // Load user profile from users_profiles if available
             let userProfile = null;
             try {
                 const usersProfiles = JSON.parse(localStorage.getItem('users_profiles') || '{}');
                 if (usersProfiles[name]) {
                     userProfile = usersProfiles[name];
-                } else {
-                    // fallback: create minimal profile
-                    const uid = 'uid-' + Math.random().toString(36).slice(2,10);
-                    userProfile = { uid, role, name, schoolId, grade };
                 }
-            } catch {
+            } catch {}
+            if (!userProfile) {
                 const uid = 'uid-' + Math.random().toString(36).slice(2,10);
-                userProfile = { uid, role, name, schoolId, grade };
+                userProfile = { uid, name };
             }
             localStorage.setItem('userProfile', JSON.stringify(userProfile));
-            // Show badge in chat header if available
-            const school = schoolsList.find(s => s.id === schoolId);
+            await loadSchoolsList();
+            const school = schoolsList.find(s => s.id === userProfile.schoolId);
             if (school && school.badgeUrl) {
                 let badge = document.getElementById('schoolBadge');
                 if (!badge) {
@@ -561,8 +503,10 @@ function logoutUser() {
     if (chatContainer) chatContainer.innerHTML = '';
     // Show login, hide chat input
     document.getElementById('loginContainer').style.display = '';
-    document.getElementById('userInput').disabled = true;
-    document.getElementById('sendBtn').disabled = true;
+    const chatWrapper = document.getElementById('chatWrapper');
+    if (chatWrapper) chatWrapper.style.display = 'none';
+    document.getElementById('user-input').disabled = true;
+    document.getElementById('send-button').disabled = true;
     logoutBtn.classList.add('hidden');
     addBotMessage('You have been logged out. Your conversation was saved.');
     // Only clear loginName and loginPassword fields
@@ -1046,222 +990,3 @@ addBotMessage = function(msg) {
   origAddBotMessage(msg);
 };
 
-// --- SIGN-UP WIZARD LOGIC ---
-document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper() {
-(function setupSignUpWizard() {
-    const showSignUpBtn = document.getElementById('showSignUpBtn');
-    const signUpWizardModal = document.getElementById('signUpWizardModal');
-    const wizardStepContent = document.getElementById('wizardStepContent');
-    const wizardStepIndicator = document.getElementById('wizardStepIndicator');
-    const wizardError = document.getElementById('wizardError');
-    const confettiCanvas = document.getElementById('confettiCanvas');
-    let wizardStep = 0;
-    let userProfile = { name: '', email: '', schoolId: '', grade: null };
-    let schoolsList = [];
-
-    // Helper: update stepper UI
-    function updateStepIndicator() {
-        Array.from(wizardStepIndicator.children).forEach((dot, idx) => {
-            dot.className = 'w-3 h-3 rounded-full ' + (idx === wizardStep ? 'bg-blue-400' : 'bg-gray-300');
-        });
-    }
-
-    // Helper: show error
-    function showWizardError(msg) {
-        wizardError.textContent = msg;
-        wizardError.classList.remove('hidden');
-    }
-    function clearWizardError() {
-        wizardError.textContent = '';
-        wizardError.classList.add('hidden');
-    }
-
-    // Step 0: Launch Pad
-    function renderStep0() {
-        updateStepIndicator();
-        wizardStepContent.innerHTML = `
-            <div class="flex flex-col items-center">
-                <div class="text-3xl mb-2">📚 Buddy-Bot</div>
-                <div class="text-lg font-semibold mb-4 text-center">Ready to join our learning galaxy?</div>
-                <button id="wizardNextBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition">Let’s Lift Off!</button>
-            </div>
-        `;
-        document.getElementById('wizardNextBtn').onclick = () => { wizardStep = 1; renderStep1(); };
-    }
-
-    // Step 1: Learner Details
-    function renderStep1() {
-        updateStepIndicator();
-        wizardStepContent.innerHTML = `
-            <label class="block mb-2 font-semibold">Your Hero Name</label>
-            <input id="wizardName" type="text" class="w-full p-2 border border-gray-300 rounded mb-4" placeholder="" autocomplete="off" />
-            <label class="block mb-2 font-semibold">Email</label>
-            <div class="flex items-center">
-                <input id="wizardEmail" type="email" class="flex-grow p-2 border border-gray-300 rounded" placeholder="" autocomplete="off" />
-                <span id="emailCheck" class="ml-2 text-xl"></span>
-            </div>
-            <button id="wizardNextBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded mt-4 transition">Next</button>
-            <button id="wizardBackBtn" class="text-gray-500 hover:underline mt-2 ml-2">Back</button>
-        `;
-        // Animated placeholder for name
-        const nameInput = document.getElementById('wizardName');
-        const namePh = 'Type your hero name here …';
-        let phIdx = 0;
-        nameInput.placeholder = '';
-        let phInterval = setInterval(() => {
-            if (phIdx <= namePh.length) {
-                nameInput.placeholder = namePh.slice(0, phIdx);
-                phIdx++;
-            } else {
-                clearInterval(phInterval);
-            }
-        }, 40);
-        // Email live check
-        const emailInput = document.getElementById('wizardEmail');
-        const emailCheck = document.getElementById('emailCheck');
-        emailInput.addEventListener('input', () => {
-            const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value);
-            emailCheck.textContent = valid ? '✅' : (emailInput.value ? '❌' : '');
-        });
-        // Next button
-        document.getElementById('wizardNextBtn').onclick = () => {
-            clearWizardError();
-            const name = nameInput.value.trim();
-            const email = emailInput.value.trim();
-            if (!name) return showWizardError('Please enter your hero name.');
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showWizardError('Please enter a valid email.');
-            userProfile.name = name;
-            userProfile.email = email;
-            wizardStep = 2; renderStep2();
-        };
-        document.getElementById('wizardBackBtn').onclick = () => { wizardStep = 0; renderStep0(); };
-    }
-
-    // Step 2: School & Grade Picker
-    async function renderStep2() {
-        updateStepIndicator();
-        // Load schools if not loaded
-        if (!schoolsList.length) {
-            try {
-                const resp = await fetch('data/schools.json');
-                schoolsList = await resp.json();
-            } catch {
-                schoolsList = [];
-            }
-        }
-        var schoolOptions = '<option value="">Choose a school…</option>';
-        for (var i = 0; i < schoolsList.length; i++) {
-            schoolOptions += '<option value="' + schoolsList[i].id + '">' + schoolsList[i].name + '</option>';
-        }
-        wizardStepContent.innerHTML = `
-            <label class="block mb-2 font-semibold">Select Your School</label>
-            <select id="wizardSchool" class="w-full p-2 border border-gray-300 rounded mb-4">
-                ${schoolOptions}
-            </select>
-            <label class="block mb-2 font-semibold">Select Your Grade</label>
-            <select id="wizardGrade" class="w-full p-2 border border-gray-300 rounded mb-4" disabled>
-                <option value="">Choose a grade…</option>
-            </select>
-            <button id="wizardNextBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition">Next</button>
-            <button id="wizardBackBtn" class="text-gray-500 hover:underline mt-2 ml-2">Back</button>
-        `;
-        const schoolSelect = document.getElementById('wizardSchool');
-        const gradeSelect = document.getElementById('wizardGrade');
-        schoolSelect.addEventListener('change', () => {
-            if (schoolSelect.value) {
-                gradeSelect.disabled = false;
-                var gradeOptions = '<option value="">Choose a grade…</option>';
-                for (var i = 1; i <= 12; i++) {
-                    gradeOptions += '<option value="' + i + '">Grade ' + i + '</option>';
-                }
-                gradeSelect.innerHTML = gradeOptions;
-            } else {
-                gradeSelect.disabled = true;
-                gradeSelect.innerHTML = '<option value="">Choose a grade…</option>';
-            }
-        });
-        document.getElementById('wizardNextBtn').onclick = () => {
-            clearWizardError();
-            const schoolId = schoolSelect.value;
-            const grade = parseInt(gradeSelect.value, 10);
-            if (!schoolId) return showWizardError('Please select your school.');
-            if (!grade) return showWizardError('Please select your grade.');
-            userProfile.schoolId = schoolId;
-            userProfile.grade = grade;
-            wizardStep = 3; renderStep3();
-        };
-        document.getElementById('wizardBackBtn').onclick = () => { wizardStep = 1; renderStep1(); };
-    }
-
-    // Step 3: Avatar Celebration
-    function renderStep3() {
-        updateStepIndicator();
-        wizardStepContent.innerHTML = `
-            <div class="flex flex-col items-center">
-                <div class="text-4xl mb-2 animate-bounce">📚 Buddy-Bot</div>
-                <div class="text-2xl font-bold mb-2">Welcome, ${userProfile.name}!</div>
-                <div class="text-lg mb-2 text-center">Homework HQ unlocked.</div>
-                <label class="block mb-2 font-semibold">Choose a Password</label>
-                <input id="wizardPassword" type="password" class="w-full p-2 border border-gray-300 rounded mb-4" placeholder="Create a password" autocomplete="new-password" required />
-                <button id="wizardFinishBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded transition">Create Account & Start Exploring!</button>
-            </div>
-        `;
-        // Confetti celebration
-        confettiCanvas.style.display = '';
-        confettiCanvas.width = window.innerWidth;
-        confettiCanvas.height = window.innerHeight;
-        confetti.create(confettiCanvas, {resize:true, useWorker:true})({
-            particleCount: 120,
-            spread: 90,
-            origin: { y: 0.6 }
-        });
-        document.getElementById('wizardFinishBtn').onclick = () => {
-            clearWizardError();
-            const password = document.getElementById('wizardPassword').value;
-            if (!password || password.length < 4) {
-                showWizardError('Please choose a password (at least 4 characters).');
-                return;
-            }
-            // Save user credentials to localStorage
-            const users = JSON.parse(localStorage.getItem('users') || '{}');
-            if (users[userProfile.name]) {
-                showWizardError('That username is already taken. Please choose another.');
-                return;
-            }
-            users[userProfile.name] = password;
-            localStorage.setItem('users', JSON.stringify(users));
-            // --- Ensure user profile is also saved in users object for login compatibility ---
-            // Save profile
-            const uid = 'uid-' + Math.random().toString(36).slice(2,10);
-            // FIX: Add role to profile (default to 'student')
-            const profileToSave = { uid, name: userProfile.name, schoolId: userProfile.schoolId, grade: userProfile.grade, role: userProfile.role || 'student' };
-            localStorage.setItem('userProfile', JSON.stringify(profileToSave));
-            // --- Also store user profile in a users_profiles object for future extensibility ---
-            const usersProfiles = JSON.parse(localStorage.getItem('users_profiles') || '{}');
-            usersProfiles[userProfile.name] = profileToSave;
-            localStorage.setItem('users_profiles', JSON.stringify(usersProfiles));
-            signUpWizardModal.classList.add('hidden');
-            confettiCanvas.style.display = 'none';
-            // --- AUTO LOGIN AFTER SIGNUP ---
-            currentUser = userProfile.name;
-            currentUserPassword = password;
-            document.getElementById('loginContainer').style.display = 'none';
-            userInput.disabled = false;
-            sendBtn.disabled = false;
-            showLogoutButton(true);
-            addBotMessage('Welcome, ' + currentUser + '! Your account is created and you are now logged in.');
-        };
-    }
-
-    // Show wizard on sign up button click
-    if (showSignUpBtn) {
-        showSignUpBtn.addEventListener('click', () => {
-            wizardStep = 0;
-            userProfile = { name: '', email: '', schoolId: '', grade: null };
-            signUpWizardModal.classList.remove('hidden');
-            clearWizardError();
-            renderStep0();
-        });
-    }
-})();
-});

@@ -6,7 +6,7 @@ import fetch from 'node-fetch';
  * Routes Knowledge and Investigations to Phi-4, others to Qwen.
  */
 export default async function handler(req, res) {
-  const API_KEY = process.env.OPEN_ROUTER_API_KEY;
+  const API_KEY = process.env.GEMMA_API_KEY || process.env.OPEN_ROUTER_API_KEY;
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
