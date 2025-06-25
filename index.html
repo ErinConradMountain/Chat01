@@ -40,7 +40,7 @@
         <button type="submit" class="form-button">Login</button>
         <p class="text-center mt-4">
             <span class="text-sm">Don't have an account?</span>
-            <button type="button" id="showSignUpBtn" class="text-blue-500 hover:underline ml-1">Sign Up</button>
+            <a href="docs/signup.html" id="showSignUpBtn" class="text-blue-500 hover:underline ml-1">Sign Up</a>
         </p>
     </form>
 </div>
@@ -48,9 +48,7 @@
 <div id="chatWrapper" class="chat-container" style="display:none;">
     <main id="chat-area" class="flex-1 overflow-y-auto">
         <!-- Example messages, real messages will be rendered by JS -->
-        <div id="chatContainer">
-            <div class="message bot"><p>Hi there! 👋 I'm the Bryneven Primary School Helper! I can answer questions about school topics, help with homework, or just chat about your day.</p></div>
-        </div>
+        <div id="chatContainer"></div>
     </main>
     
     <!-- Sign-up Wizard Modal -->
@@ -95,7 +93,7 @@
         <div class="flex justify-between items-center w-full">
             <span>Powered by AI | © 2023-2025 Bryneven Primary School</span>
             <div>
-                <button id="showSignUpBtn2" class="text-blue-500 hover:underline">Sign Up</button>
+                <a id="showSignUpBtn2" href="docs/signup.html" class="text-blue-500 hover:underline">Sign Up</a>
                 <button id="logoutBtn" class="text-red-500 hover:underline hidden ml-4">Logout</button>
             </div>
         </div>
@@ -132,10 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('send-button').disabled = true;
     }
     
-    // Duplicate sign up button in footer should also open the wizard
-    document.getElementById('showSignUpBtn2').addEventListener('click', function() {
-        document.getElementById('showSignUpBtn').click();
-    });
+
     
     // Close button for wizard
     document.getElementById('closeWizardBtn').addEventListener('click', function() {

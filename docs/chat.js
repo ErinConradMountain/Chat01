@@ -237,7 +237,7 @@ async function generateInitialQuestions(text) {
     }
 }
 
-// Initialize chat with welcome message
+// Initialize chat event handlers once the DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     // Add event listeners only if elements exist
     if (userInput && sendBtn) {
@@ -250,10 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
         sendBtn.addEventListener('click', sendMessage);
     }
 
-    testGeminiAPI("Hi! What is your name?").then(reply => {
-        console.log("Test Gemini reply:", reply);
-        addBotMessage(reply);
-    });
 
     // Suggestion buttons: trigger chat on click
     const suggestionMap = {
@@ -1203,14 +1199,10 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
         };
     }
 
-    // Show wizard on sign up button click
+    // Redirect to dedicated sign up page instead of inline wizard
     if (showSignUpBtn) {
         showSignUpBtn.addEventListener('click', () => {
-            wizardStep = 0;
-            userProfile = { name: '', email: '', schoolId: '', grade: null };
-            signUpWizardModal.classList.remove('hidden');
-            clearWizardError();
-            renderStep0();
+            window.location.href = 'docs/signup.html';
         });
     }
 })();
