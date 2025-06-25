@@ -780,7 +780,13 @@ async function sendMessage() {
     } catch (error) {
         console.error("❌ AI call failed:", error);
         hideTypingIndicator();
-        addBotMessage("I'm having trouble thinking right now. Can you try again in a bit?");
+        // Fallback: use retrieved facts to craft a basic answer
+        if (topFacts && topFacts.length > 0) {
+            const fallbackReply = `Here's something that might help: ${topFacts.join(' ')}`;
+            addBotMessage(fallbackReply);
+        } else {
+            addBotMessage("I'm having trouble thinking right now. Can you try again in a bit?");
+        }
     }
 }
 
