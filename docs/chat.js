@@ -289,71 +289,26 @@ function setupAuthUI() {
     const signUpError = document.getElementById('signUpError');
     const cancelSignUpBtn = document.getElementById('cancelSignUpBtn');
 
-    // --- NEW: Populate school and grade dropdowns, add role selector, mascot update ---
-    const loginRole = document.getElementById('loginRole');
-    const loginSchool = document.getElementById('loginSchool');
-    const loginGrade = document.getElementById('loginGrade');
     let schoolsList = [];
-    // Populate school dropdown
-    function populateSchools() {
-        if (!loginSchool) return;
-        fetch('data/schools.json')
-            .then(res => {
-                if (!res.ok) throw new Error('Schools file not found');
-                return res.json();
-            })
-            .then(schools => {
-                schoolsList = schools;
-                var schoolOptions = '<option value="">Select School</option>';
-                for (var i = 0; i < schools.length; i++) {
-                    schoolOptions += '<option value="' + schools[i].id + '">' + schools[i].name + '</option>';
-                }
-                loginSchool.innerHTML = schoolOptions;
-            })
-            .catch(() => {
-                loginSchool.innerHTML = '<option value="">No schools found</option>';
-            });
-    }
-    // Populate grade dropdown
-    function populateGrades() {
-        if (!loginGrade) return;
-        var gradeOptions = '<option value="">Select Grade</option>';
-        for (var i = 1; i <= 12; i++) {
-            gradeOptions += '<option value="' + i + '">Grade ' + i + '</option>';
+    async function loadSchoolsList() {
+        if (schoolsList.length) return schoolsList;
+        try {
+            const resp = await fetch('data/schools.json');
+            schoolsList = await resp.json();
+        } catch {
+            schoolsList = [];
         }
-        loginGrade.innerHTML = gradeOptions;
+        return schoolsList;
     }
-    // Always populate on DOMContentLoaded
-    if (document.readyState === 'loading') {
-        window.addEventListener('DOMContentLoaded', () => {
-            populateSchools();
-            populateGrades();
-        });
-    } else {
-        populateSchools();
-        populateGrades();
-    }
-    // Mascot update on role change
-    if (loginRole) {
-        loginRole.addEventListener('change', function() {
-            const mascot = document.getElementById('wizardMascot') || document.getElementById('homeworkMascot');
-            if (mascot) {
-                if (loginRole.value === 'teacher') mascot.textContent = '📚🎓';
-                else mascot.textContent = '📚🎒';
-            }
-        });
-    }
+
     // Update login logic to check localStorage
     if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const name = document.getElementById('loginName').value.trim();
             const password = document.getElementById('loginPassword').value;
-            const role = loginRole ? loginRole.value : 'student';
-            const schoolId = loginSchool ? loginSchool.value : '';
-            const grade = loginGrade ? parseInt(loginGrade.value, 10) : null;
-            if (!name || !password || !role || !schoolId || !grade) {
-                loginError.textContent = 'Please fill in all fields (name, password, role, school, grade).';
+            if (!name || !password) {
+                loginError.textContent = 'Please enter your username and password.';
                 loginError.classList.remove('hidden');
                 return;
             }
@@ -376,24 +331,20 @@ function setupAuthUI() {
             userInput.disabled = false;
             sendBtn.disabled = false;
             showLogoutButton(true);
-            // Load user profile from users_profiles if available
             let userProfile = null;
             try {
                 const usersProfiles = JSON.parse(localStorage.getItem('users_profiles') || '{}');
                 if (usersProfiles[name]) {
                     userProfile = usersProfiles[name];
-                } else {
-                    // fallback: create minimal profile
-                    const uid = 'uid-' + Math.random().toString(36).slice(2,10);
-                    userProfile = { uid, role, name, schoolId, grade };
                 }
-            } catch {
+            } catch {}
+            if (!userProfile) {
                 const uid = 'uid-' + Math.random().toString(36).slice(2,10);
-                userProfile = { uid, role, name, schoolId, grade };
+                userProfile = { uid, name };
             }
             localStorage.setItem('userProfile', JSON.stringify(userProfile));
-            // Show badge in chat header if available
-            const school = schoolsList.find(s => s.id === schoolId);
+            await loadSchoolsList();
+            const school = schoolsList.find(s => s.id === userProfile.schoolId);
             if (school && school.badgeUrl) {
                 let badge = document.getElementById('schoolBadge');
                 if (!badge) {
