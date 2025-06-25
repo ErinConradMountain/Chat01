@@ -45,7 +45,7 @@
     </form>
 </div>
 
-<div class="chat-container">
+<div id="chatWrapper" class="chat-container" style="display:none;">
     <main id="chat-area" class="flex-1 overflow-y-auto">
         <!-- Example messages, real messages will be rendered by JS -->
         <div id="chatContainer">
@@ -111,17 +111,23 @@
 <script>
 // Show login container if not logged in
 document.addEventListener('DOMContentLoaded', function() {
+    const loginContainer = document.getElementById('loginContainer');
+    const chatWrapper = document.getElementById('chatWrapper');
     try {
         const userProfile = JSON.parse(localStorage.getItem('userProfile'));
         if (!userProfile || !userProfile.name) {
-            document.getElementById('loginContainer').style.display = 'block';
+            loginContainer.style.display = 'block';
+            chatWrapper.style.display = 'none';
             document.getElementById('user-input').disabled = true;
             document.getElementById('send-button').disabled = true;
         } else {
+            loginContainer.style.display = 'none';
+            chatWrapper.style.display = 'block';
             document.getElementById('logoutBtn').classList.remove('hidden');
         }
     } catch(e) {
-        document.getElementById('loginContainer').style.display = 'block';
+        loginContainer.style.display = 'block';
+        chatWrapper.style.display = 'none';
         document.getElementById('user-input').disabled = true;
         document.getElementById('send-button').disabled = true;
     }

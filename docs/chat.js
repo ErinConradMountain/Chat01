@@ -239,9 +239,6 @@ async function generateInitialQuestions(text) {
 
 // Initialize chat with welcome message
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Enable chat input and send button for testing ---
-    if (userInput) userInput.disabled = false;
-    if (sendBtn) sendBtn.disabled = false;
     // Add event listeners only if elements exist
     if (userInput && sendBtn) {
         userInput.addEventListener('keydown', function(e) {
@@ -284,10 +281,6 @@ function setupAuthUI() {
     const loginContainer = document.getElementById('loginContainer');
     const loginError = document.getElementById('loginError');
     const showSignUpBtn = document.getElementById('showSignUpBtn');
-    const signUpModal = document.getElementById('signUpModal');
-    const signUpForm = document.getElementById('signUpForm');
-    const signUpError = document.getElementById('signUpError');
-    const cancelSignUpBtn = document.getElementById('cancelSignUpBtn');
 
     let schoolsList = [];
     async function loadSchoolsList() {
@@ -328,6 +321,8 @@ function setupAuthUI() {
             currentUser = name;
             currentUserPassword = password;
             loginContainer.style.display = 'none';
+            const chatWrapper = document.getElementById('chatWrapper');
+            if (chatWrapper) chatWrapper.style.display = 'block';
             userInput.disabled = false;
             sendBtn.disabled = false;
             showLogoutButton(true);
@@ -512,8 +507,10 @@ function logoutUser() {
     if (chatContainer) chatContainer.innerHTML = '';
     // Show login, hide chat input
     document.getElementById('loginContainer').style.display = '';
-    document.getElementById('userInput').disabled = true;
-    document.getElementById('sendBtn').disabled = true;
+    const chatWrapper = document.getElementById('chatWrapper');
+    if (chatWrapper) chatWrapper.style.display = 'none';
+    document.getElementById('user-input').disabled = true;
+    document.getElementById('send-button').disabled = true;
     logoutBtn.classList.add('hidden');
     addBotMessage('You have been logged out. Your conversation was saved.');
     // Only clear loginName and loginPassword fields
@@ -1197,6 +1194,8 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
             currentUser = userProfile.name;
             currentUserPassword = password;
             document.getElementById('loginContainer').style.display = 'none';
+            const chatWrapper = document.getElementById('chatWrapper');
+            if (chatWrapper) chatWrapper.style.display = 'block';
             userInput.disabled = false;
             sendBtn.disabled = false;
             showLogoutButton(true);
