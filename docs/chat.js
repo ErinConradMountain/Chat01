@@ -284,10 +284,6 @@ function setupAuthUI() {
     const loginContainer = document.getElementById('loginContainer');
     const loginError = document.getElementById('loginError');
     const showSignUpBtn = document.getElementById('showSignUpBtn');
-    const signUpModal = document.getElementById('signUpModal');
-    const signUpForm = document.getElementById('signUpForm');
-    const signUpError = document.getElementById('signUpError');
-    const cancelSignUpBtn = document.getElementById('cancelSignUpBtn');
 
     let schoolsList = [];
     async function loadSchoolsList() {
