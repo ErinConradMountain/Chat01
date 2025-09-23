@@ -21,6 +21,22 @@ A responsive, educational chatbot designed to assist students, parents, and staf
 3. Start the server: `npm start`
 4. Open in your browser at `http://localhost:3000`
 
+
+### Streaming vs. Non-Streaming (quick toggle)
+
+- The UI streams responses via Server‑Sent Events (SSE) for faster feedback.
+- If your browser/network blocks SSE or you see blank/placeholder replies, disable streaming temporarily by adding a URL flag:
+	- `http://localhost:3000/?nostream=1`
+- With `nostream=1`, the UI uses a single JSON response (no streaming) which is the most compatible path and matches backend tests.
+
+PowerShell chat smoke test (non‑streaming backend call):
+```powershell
+$body = @{ 
+	contents = @(@{ role = "user"; parts = @(@{ text = "Explain fractions simply." }) })
+	generationConfig = @{ maxOutputTokens = 280; temperature = 0.7 }
+} | ConvertTo-Json -Depth 6
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/chat -ContentType "application/json" -Body $body | ConvertTo-Json -Depth 8
+```
 ## Documentation
 
 For detailed information about the project, please refer to:

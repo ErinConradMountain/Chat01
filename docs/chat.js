@@ -2,19 +2,73 @@
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-button');
 const chatContainer = document.getElementById('chat-area');
-// Response length slider
-const responseLengthSlider = document.getElementById('responseLength');
-const responseLengthValue = document.getElementById('responseLengthValue');
-let responseLength = 400;
-if (responseLengthSlider && responseLengthValue) {
-    responseLengthSlider.addEventListener('input', function() {
-        responseLength = parseInt(this.value, 10);
-        responseLengthValue.textContent = this.value;
+const presetButtons = document.querySelectorAll('.preset-btn');
+const temperatureSlider = document.getElementById('temperatureSlider');
+const temperatureValue = document.getElementById('temperatureValue');
+const maxTokensSlider = document.getElementById('maxTokensSlider');
+const maxTokensValue = document.getElementById('maxTokensValue');
+const presetTip = document.getElementById('preset-tip');
+const tipDismiss = document.getElementById('tip-dismiss');
+let temperatureSetting = 0.7;
+let maxTokensSetting = 400;
+
+// Backend endpoint (served by server.js). Allow overriding base via window.CHATBOT_API_BASE
+const BACKEND_CHAT_API_URL = (((typeof window !== 'undefined') && window.CHATBOT_API_BASE) ? window.CHATBOT_API_BASE : '') + '/api/chat';
+
+// Local knowledge cache and chat history
+let knowledgeCorpus = null;
+let chatHistory = [];
+
+// Helper: fetch timeout compatible with older browsers
+function fetchWithTimeout(resource, options = {}, timeoutMs = 20000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    const opts = { ...options, signal: controller.signal };
+    return fetch(resource, opts).finally(() => clearTimeout(id));
+}
+
+// Toggle streaming via URL: add ?nostream=1 to disable SSE for debugging
+const STREAMING_ENABLED = (typeof window !== 'undefined')
+    ? !new URLSearchParams(window.location.search).has('nostream')
+    : true;
+console.log('[chat] streaming enabled:', STREAMING_ENABLED);
+
+if (tipDismiss && presetTip) {
+    tipDismiss.addEventListener('click', () => {
+        presetTip.style.display = 'none';
     });
-    responseLength = parseInt(responseLengthSlider.value, 10);
-    responseLengthValue.textContent = responseLengthSlider.value;
-    // Ensure min is 100
-    responseLengthSlider.min = '100';
+}
+
+if (temperatureSlider && temperatureValue) {
+    const clampTemp = (val) => Math.max(0, Math.min(1, Number(val)));
+    temperatureSetting = clampTemp(temperatureSlider.value || 0.7);
+    temperatureSlider.addEventListener('input', (event) => {
+        temperatureSetting = clampTemp(event.target.value);
+        temperatureValue.textContent = temperatureSetting.toFixed(1);
+    });
+    temperatureValue.textContent = temperatureSetting.toFixed(1);
+}
+
+if (maxTokensSlider && maxTokensValue) {
+    const clampTokens = (val) => Math.max(150, Math.min(700, Number(val)));
+    maxTokensSetting = clampTokens(maxTokensSlider.value || 400);
+    maxTokensSlider.addEventListener('input', (event) => {
+        maxTokensSetting = clampTokens(event.target.value);
+        maxTokensValue.textContent = Math.round(maxTokensSetting);
+    });
+    maxTokensValue.textContent = Math.round(maxTokensSetting);
+}
+
+if (presetButtons && presetButtons.length) {
+    presetButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const prompt = button.getAttribute('data-prompt');
+            if (!prompt) return;
+            userInput.value = prompt;
+            userInput.focus();
+            sendMessage();
+        });
+    });
 }
 
 // Use API key from config file
@@ -44,96 +98,6 @@ function summarizeMessages(messages) {
 }
 
 // Helper: Load conversation summaries for a user
-function loadUserConversations(userName) {
-    try {
-        const key = `conversation_knowledge_${userName}`;
-        return JSON.parse(localStorage.getItem(key) || '[]');
-    } catch (e) {
-        return [];
-    }
-}
-
-// Chat history
-let chatHistory = [];
-
-// Fix: Declare knowledgeCorpus before use
-let knowledgeCorpus = [];
-
-// Times Table Quiz State
-let activeQuiz = null;
-
-// Paste mode and discussion state
-let pasteModeActive = false;
-let pastedContent = "";
-let activeDiscussionText = "";
-
-// Replace direct Gemini API URL with backend endpoint
-// For GitHub Pages compatibility, point to a deployed backend
-let BACKEND_CHAT_API_URL = "https://bryneven-chatbot-api.vercel.app/api/chat";
-// For local development, change to true to use local endpoint
-const USE_LOCAL_API = true; 
-if (USE_LOCAL_API) {
-    BACKEND_CHAT_API_URL = "/api/chat";
-}
-
-// Add fallback mechanism in case the API call fails
-async function callChatAPI(prompt, maxTokens = 300, temp = 0.3) {
-    console.log("⚙️ Attempting API call...");
-    try {
-        const response = await fetch(BACKEND_CHAT_API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                contents: [
-                    { role: "user", parts: [{ text: prompt }] }
-                ],
-                generationConfig: {
-                    maxOutputTokens: maxTokens,
-                    temperature: temp
-                }
-            }),
-            // Add longer timeout for slow connections
-            signal: AbortSignal.timeout(10000)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API responded with status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
-    } catch (err) {
-        console.error("❌ API call failed:", err);
-        return null;
-    }
-}
-
-// For memory: store last 3 user and assistant messages
-function getRecentHistory() {
-    // Only keep last 3 user and assistant messages
-    const filtered = chatHistory.filter(m => m.role === 'user' || m.role === 'assistant');
-    return filtered.slice(-6); // 3 user + 3 assistant
-}
-
-// Summarize older history into one line
-function getHistorySummary() {
-    // Get all but last 3 user/assistant messages
-    const filtered = chatHistory.filter(m => m.role === 'user' || m.role === 'assistant');
-    if (filtered.length <= 6) return '';
-    const older = filtered.slice(0, -6);
-    if (older.length === 0) return '';
-    // Simple summary: concatenate topics mentioned
-    const topics = older.map(m => m.content).join(' ').toLowerCase();
-    // Extract keywords (very basic)
-    const words = topics.match(/\b\w{4,}\b/g) || [];
-    const freq = {};
-    words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
-    const sorted = Object.entries(freq).sort((a,b) => b[1]-b[1]).map(([w]) => w);
-    if (sorted.length === 0) return '';
-    return `We have been talking about ${sorted.slice(0,2).join(' and ')}.`;
-}
 
 // Simple contradiction detector: if summary contains a topic and new facts contain a negation or different info
 function detectContradiction(summary, facts) {
@@ -158,6 +122,11 @@ function detectContradiction(summary, facts) {
     knowledgeCorpus = await buildKnowledgeCorpus();
 })();
 
+// Basic safety gate (stub) — return a friendly message or null to continue
+function getSafetyResponse(message) {
+    return null;
+}
+
 // Ensure AI response is within the character limit
 function ensureFullSentence(text, maxChars = 1000) {
     // Truncate to the maxChars (from slider)
@@ -176,7 +145,7 @@ function ensureFullSentence(text, maxChars = 1000) {
 
 // Minimal Gemini API test function (updated to use backend)
 async function testGeminiAPI(prompt) {
-    console.log("⚙️ About to call Gemini API via backend...");
+    console.log('About to call chat API via backend...');
     try {
         const response = await fetch(BACKEND_CHAT_API_URL, {
             method: "POST",
@@ -198,11 +167,11 @@ async function testGeminiAPI(prompt) {
         });
         const data = await response.json();
         let reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't understand that.";
-        reply = ensureFullSentence(reply, responseLength);
-        console.log("✅ Gemini response received:", reply);
+        reply = ensureFullSentence(reply, maxTokensSetting);
+        console.log('Chat response received:', reply);
         return reply;
     } catch (err) {
-        console.error("❌ Gemini API call failed:", err);
+        console.error('Gemini API call failed:', err);
         // If external API fails, use local fallback
         return "Oops! I had a problem thinking right now. Let me try again with my local knowledge.";
     }
@@ -210,7 +179,7 @@ async function testGeminiAPI(prompt) {
 
 // Generate initial questions about pasted content (use backend)
 async function generateInitialQuestions(text) {
-    const prompt = `\nYou're Bryneven Helper, a chatbot for learners aged 7–13.\n\nHere is something the learner pasted:\n"${text}"\n\nYour job is to ask 2 friendly, simple questions to check understanding.\nAvoid tricky words. Ask like a kind tutor. Use full sentences.\n`;
+    const prompt = `\nYou're Bryneven Helper, a chatbot for learners aged 713.\n\nHere is something the learner pasted:\n"${text}"\n\nYour job is to ask 2 friendly, simple questions to check understanding.\nAvoid tricky words. Ask like a kind tutor. Use full sentences.\n`;
     try {
         const response = await fetch(BACKEND_CHAT_API_URL, {
             method: "POST",
@@ -251,141 +220,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // Suggestion buttons: trigger chat on click
+    // Dropdown suggestions
     const suggestionMap = {
         'about our school': 'Tell me about Bryneven Primary School.',
         'purple mash help': 'What is Purple Mash?',
         'school hours': 'What are the school hours?',
-        'math tutoring': 'I need help with math.'
+        'math tutoring': 'I need help with math.',
+        'homework tips': 'Give me 3 simple homework tips for Grade 5.',
+        'explain fractions': 'Explain fractions like I am in Grade 4.',
+        'reading practice': 'Give me a short reading practice with 2 questions.',
+        'science project ideas': 'Suggest 3 easy science project ideas for primary school.'
     };
-    const suggestionButtons = document.querySelectorAll('.suggestion-buttons .suggestion-btn');
-    suggestionButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (userInput && !userInput.disabled) {
-                const key = btn.textContent.trim().toLowerCase();
-                const mapped = suggestionMap[key] || btn.textContent.trim();
+    const suggestionSelect = document.getElementById('suggestion-select');
+    if (suggestionSelect) {
+        suggestionSelect.addEventListener('change', () => {
+            const key = suggestionSelect.value.trim().toLowerCase();
+            const mapped = suggestionMap[key] || suggestionSelect.value.trim();
+            if (mapped && userInput && !userInput.disabled) {
                 userInput.value = mapped;
                 sendMessage();
+                suggestionSelect.selectedIndex = 0; // reset placeholder
             }
         });
-    });
+    }
+
+    // Context menu: Describe / Define / Explain / Provide an Example
+    setupContextMenu();
+    // Tip and help tooltip are handled by unified implementations below
 });
-
-// UI: Login handling
-function setupAuthUI() {
-    const loginForm = document.getElementById('loginForm');
-    const loginContainer = document.getElementById('loginContainer');
-    const loginError = document.getElementById('loginError');
-    const showSignUpBtn = document.getElementById('showSignUpBtn');
-
-    let schoolsList = [];
-    async function loadSchoolsList() {
-        if (schoolsList.length) return schoolsList;
-        try {
-            const resp = await fetch('data/schools.json');
-            schoolsList = await resp.json();
-        } catch {
-            schoolsList = [];
-        }
-        return schoolsList;
-    }
-
-    // Update login logic to check localStorage
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const name = document.getElementById('loginName').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            if (!name || !password) {
-                loginError.textContent = 'Please enter your username and password.';
-                loginError.classList.remove('hidden');
-                return;
-            }
-            const users = JSON.parse(localStorage.getItem('users') || '{}');
-            if (!users[name]) {
-                loginError.textContent = 'User not found. Please sign up first.';
-                loginError.classList.remove('hidden');
-                if (showSignUpBtn) showSignUpBtn.click();
-                return;
-            }
-            if (users[name] !== password) {
-                loginError.textContent = 'Incorrect password. Please try again.';
-                loginError.classList.remove('hidden');
-                return;
-            }
-            loginError.classList.add('hidden');
-            currentUser = name;
-            currentUserPassword = password;
-            loginContainer.style.display = 'none';
-            const chatWrapper = document.getElementById('chatWrapper');
-            if (chatWrapper) chatWrapper.style.display = 'block';
-            userInput.disabled = false;
-            sendBtn.disabled = false;
-            showLogoutButton(true);
-            let userProfile = null;
-            try {
-                const usersProfiles = JSON.parse(localStorage.getItem('users_profiles') || '{}');
-                if (usersProfiles[name]) {
-                    userProfile = usersProfiles[name];
-                }
-            } catch {}
-            if (!userProfile) {
-                const uid = 'uid-' + Math.random().toString(36).slice(2,10);
-                userProfile = { uid, name };
-            }
-            localStorage.setItem('userProfile', JSON.stringify(userProfile));
-            await loadSchoolsList();
-            const school = schoolsList.find(s => s.id === userProfile.schoolId);
-            if (school && school.badgeUrl) {
-                let badge = document.getElementById('schoolBadge');
-                if (!badge) {
-                    badge = document.createElement('img');
-                    badge.id = 'schoolBadge';
-                    badge.style.height = '40px';
-                    badge.style.marginRight = '8px';
-                    const header = document.querySelector('header .flex');
-                    if (header) header.insertBefore(badge, header.firstChild);
-                }
-                badge.src = school.badgeUrl;
-                badge.alt = school.name + ' badge';
-            }
-            // Load previous summaries
-            const summaries = loadUserConversations(currentUser);
-            if (summaries.length > 0) {
-                function formatTimestamp(ts) {
-                    if (!ts) return '';
-                    try {
-                        const d = new Date(ts);
-                        if (isNaN(d.getTime())) return '';
-                        return d.toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    } catch { return ''; }
-                }
-                const lastSummary = summaries[summaries.length - 1]?.summary;
-                if (lastSummary) {
-                    addBotMessage(`Welcome back, ${currentUser}! Last time, we discussed: "${lastSummary}"
-Here are your previous conversation summaries:`);
-                } else {
-                    addBotMessage(`Welcome back, ${currentUser}! Here are your previous conversation summaries:`);
-                }
-                summaries.forEach(s => {
-                    const formatted = formatTimestamp(s.timestamp);
-                    const summaryText = s.summary;
-                    if (summaryText) {
-                        addBotMessage(`[${formatted}] ${summaryText}`);
-                    }
-                });
-            } else {
-                addBotMessage(`Welcome, ${currentUser}! Let's start chatting.`);
-            }
-        });
-    }
-}
-
-if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', setupAuthUI);
-} else {
-    setupAuthUI();
-}
 
 function sendSuggestion(text) {
     userInput.value = text;
@@ -406,8 +268,8 @@ function appendToConversationKnowledge(entry) {
     data.push(entry);
     localStorage.setItem(key, JSON.stringify(data));
 }
-
 function addUserMessage(message) {
+    console.log('[chat] user message:', message);
     const messageElement = document.createElement('div');
     messageElement.className = 'message user';
     const p = document.createElement('p');
@@ -417,20 +279,119 @@ function addUserMessage(message) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-function addBotMessage(message) {
-    const messageElement = document.createElement('div');
-    messageElement.className = 'message bot';
+function sanitizeForDisplay(message) {
+    if (!message) return '';
     let plainMessage = message.replace(/<[^>]+>/g, '').replace(/[`*_~]/g, '');
-    plainMessage = plainMessage.replace(/[[\]{}]/g, '');
+    plainMessage = plainMessage.replace(/[\[\]{}]/g, '');
     if (plainMessage.length > 750) {
         plainMessage = plainMessage.slice(0, 750);
         if (!plainMessage.endsWith('.')) plainMessage += '...';
     }
+    return plainMessage;
+}
+
+function addBotMessage(message) {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message bot';
+    const safeText = sanitizeForDisplay(message);
     const p = document.createElement('p');
-    p.textContent = plainMessage;
+    p.textContent = safeText;
+    p.classList.add('bot-text');
     messageElement.appendChild(p);
     chatContainer.appendChild(messageElement);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function createStreamingBotParagraph() {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message bot';
+    const paragraph = document.createElement('p');
+    paragraph.classList.add('bot-text');
+    paragraph.textContent = '';
+    messageElement.appendChild(paragraph);
+    chatContainer.appendChild(messageElement);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    return paragraph;
+}
+
+// Context menu implementation
+function setupContextMenu() {
+    let menu;
+    function ensureMenu() {
+        if (menu) return menu;
+        menu = document.createElement('div');
+        menu.id = 'context-menu';
+        menu.style.position = 'fixed';
+        menu.style.background = '#fff';
+        menu.style.border = '1px solid #ddd';
+        menu.style.borderRadius = '6px';
+        menu.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+        menu.style.padding = '6px';
+        menu.style.display = 'none';
+        menu.style.zIndex = 1000;
+        const items = ['Describe', 'Define', 'Explain', 'Provide an Example'];
+        items.forEach(label => {
+            const btn = document.createElement('button');
+            btn.textContent = label;
+            btn.style.display = 'block';
+            btn.style.width = '100%';
+            btn.style.textAlign = 'left';
+            btn.style.padding = '6px 10px';
+            btn.style.borderRadius = '4px';
+            btn.style.border = 'none';
+            btn.style.background = 'transparent';
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('mouseenter', () => btn.style.background = '#f3f4f6');
+            btn.addEventListener('mouseleave', () => btn.style.background = 'transparent');
+            btn.addEventListener('click', () => {
+                const selection = window.getSelection()?.toString()?.trim();
+                hideMenu();
+                if (selection) handleContextAction(label, selection);
+            });
+            menu.appendChild(btn);
+        });
+        document.body.appendChild(menu);
+        document.addEventListener('click', hideMenu);
+        window.addEventListener('resize', hideMenu);
+        return menu;
+    }
+    function hideMenu() { if (menu) menu.style.display = 'none'; }
+    function showMenu(x, y) {
+        ensureMenu();
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+        menu.style.display = 'block';
+    }
+    // Right-click on bot text
+    document.addEventListener('contextmenu', (e) => {
+        const target = e.target;
+        if (target && target.classList && target.classList.contains('bot-text')) {
+            e.preventDefault();
+            const sel = window.getSelection()?.toString()?.trim();
+            if (sel) showMenu(e.clientX, e.clientY);
+        }
+    });
+    // Long-press on mobile
+    let touchTimer = null;
+    document.addEventListener('touchstart', (e) => {
+        const target = e.target;
+        if (target && target.classList && target.classList.contains('bot-text')) {
+            touchTimer = setTimeout(() => {
+                const sel = window.getSelection()?.toString()?.trim();
+                if (sel) {
+                    const touch = e.touches[0];
+                    showMenu(touch.clientX, touch.clientY);
+                }
+            }, 500);
+        }
+    }, { passive: true });
+    document.addEventListener('touchend', () => { if (touchTimer) clearTimeout(touchTimer); }, { passive: true });
+}
+
+async function handleContextAction(action, text) {
+    const prompt = `${action} the term or phrase: "${text}" in a way a Grade 4-7 learner can understand. Keep it friendly and clear.`;
+    userInput.value = prompt;
+    await sendMessage();
 }
 
 function showTypingIndicator() {
@@ -499,7 +460,7 @@ function logoutUser() {
     pastedContent = "";
     activeDiscussionText = "";
     // Clear chat UI
-    const chatContainer = document.getElementById('chatContainer');
+    const chatContainer = document.getElementById('chat-area');
     if (chatContainer) chatContainer.innerHTML = '';
     // Show login, hide chat input
     document.getElementById('loginContainer').style.display = '';
@@ -528,7 +489,7 @@ function showLogoutButton(show) {
     }
 }
 
-// --- HOMEWORK ↔ CHATBOT SYNERGY ---
+// --- HOMEWORK  CHATBOT SYNERGY ---
 // Helper: detect homework queries
 function isHomeworkQuery(message) {
     return /\b(homework|what.*homework|my homework|do I have homework|show.*homework|list.*homework)\b/i.test(message);
@@ -554,6 +515,7 @@ async function getUserHomeworkList() {
     } catch { allHomework = []; }
     const userProfile = getCurrentUserProfile();
     if (!userProfile) return [];
+    const schoolVal = userProfile.schoolId;
     return allHomework.filter(hw => {
         let match = true;
         if (schoolVal && hw.schoolId && typeof hw.schoolId === 'string' && typeof schoolVal === 'string') {
@@ -567,12 +529,134 @@ async function getUserHomeworkList() {
 // Helper: summarize homework for chat
 function summarizeHomeworkList(hwList) {
     if (!hwList.length) return "You don't have any homework listed for this week!";
-    return hwList.map(hw => '• ' + hw.subject + ': ' + hw.description).join('\n');
+    return hwList.map(hw => ' ' + hw.subject + ': ' + hw.description).join('\n');
+}
+
+async function streamChatCompletion(payload) {
+    const url = `${BACKEND_CHAT_API_URL}?stream=1`;
+    console.log('[chat] stream request payload:', payload);
+    const response = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream'
+        },
+        body: JSON.stringify(payload),
+    }, 20000);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    if (!response.body) {
+        throw new Error('Streaming not supported');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let aggregated = '';
+    let paragraph = null;
+    let indicatorCleared = false;
+
+    try {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            // Normalize CRLF to LF for consistent SSE parsing
+            buffer = buffer.replace(/\r\n/g, '\n');
+            let boundary;
+            while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+                const rawEvent = buffer.slice(0, boundary).trim();
+                buffer = buffer.slice(boundary + 2);
+                if (!rawEvent) continue;
+                let eventType = 'message';
+                let dataPayload = '';
+                for (const line of rawEvent.split('\n')) {
+                    if (line.startsWith('event:')) {
+                        eventType = line.slice(6).trim();
+                    } else if (line.startsWith('data:')) {
+                        dataPayload += line.slice(5).trim();
+                    }
+                }
+                if (!dataPayload) continue;
+                if (eventType === 'token') {
+                    let delta = '';
+                    try {
+                        const parsed = JSON.parse(dataPayload);
+                        delta = parsed.delta || parsed.text || '';
+                    } catch {
+                        delta = dataPayload;
+                    }
+                    if (!delta) continue;
+                    aggregated += delta;
+                    if (aggregated.length === delta.length) {
+                        console.log('[chat] first token received');
+                    }
+                    if (!indicatorCleared) {
+                        hideTypingIndicator();
+                        paragraph = createStreamingBotParagraph();
+                        indicatorCleared = true;
+                    }
+                    if (paragraph) {
+                        paragraph.textContent = sanitizeForDisplay(aggregated);
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                } else if (eventType === 'done') {
+                    console.log('[chat] stream done, chars:', aggregated.length);
+                    return { text: aggregated, paragraph, streamed: indicatorCleared };
+                } else if (eventType === 'error') {
+                    let message = 'Stream error';
+                    try {
+                        const parsed = JSON.parse(dataPayload);
+                        message = parsed.message || message;
+                    } catch {}
+                    console.warn('[chat] stream error event:', message);
+                    throw new Error(message);
+                }
+            }
+        }
+    } finally {
+        reader.releaseLock();
+    }
+
+    return { text: aggregated, paragraph, streamed: indicatorCleared };
+}
+
+async function requestChatCompletion(payload) {
+    console.log('[chat] fallback request payload:', payload);
+    const response = await fetchWithTimeout(BACKEND_CHAT_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        mode: 'cors',
+        credentials: 'include',
+    }, 20000);
+
+    let data = null;
+    try {
+        data = await response.json();
+    } catch {
+        data = null;
+    }
+
+    if (!response.ok) {
+        const serverError = data?.error || `HTTP ${response.status}`;
+        throw new Error(serverError);
+    }
+
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    console.log('[chat] fallback response chars:', text.length);
+    return text;
 }
 
 async function sendMessage() {
     const message = userInput.value.trim();
     if (!message) return;
+
     addUserMessage(message);
     userInput.value = '';
     chatHistory.push({ role: "user", content: message });
@@ -583,189 +667,16 @@ async function sendMessage() {
         content: message
     });
 
-    // --- HOMEWORK CONTEXT INJECTION ---
-    if (isHomeworkQuery(message)) {
-        showTypingIndicator();
-        const hwList = await getUserHomeworkList();
-        const summary = summarizeHomeworkList(hwList);
-        hideTypingIndicator();
-        addBotMessage(summary + "\nI’ve also pinned this in your Homework HQ ➜");
-        chatHistory.push({ role: "assistant", content: summary });
-        userMessageBuffer.push({ role: "assistant", content: summary });
+    const safetyResponse = getSafetyResponse(message);
+    if (safetyResponse) {
+        const safeReply = ensureFullSentence(safetyResponse, maxTokensSetting);
+        addBotMessage(safeReply);
+        chatHistory.push({ role: "assistant", content: safeReply });
+        userMessageBuffer.push({ role: "assistant", content: safeReply });
         appendToConversationKnowledge({
             timestamp: new Date().toISOString(),
             role: 'assistant',
-            content: summary
-        });
-        if (userMessageBuffer.length >= SUMMARY_INTERVAL) {
-            const summaryMsg = summarizeMessages(userMessageBuffer);
-            appendToConversationKnowledge({
-                user: currentUser,
-                timestamp: new Date().toISOString(),
-                summary: summaryMsg
-            });
-            userMessageBuffer = [];
-        }
-        return;
-    }
-
-    // --- Paste Mode Activation ---
-    if (!pasteModeActive && /\bpaste|paragraph|work\b/i.test(message)) {
-        pasteModeActive = true;
-        addBotMessage("Sure! Go ahead and paste the content you’d like me to look at.");
-        return;
-    }
-    // --- Capture Pasted Input ---
-    if (pasteModeActive && message.split(/\s+/).length > 50) {
-        pastedContent = message;
-        pasteModeActive = false;
-        activeDiscussionText = pastedContent;
-        addBotMessage("Thanks! I’ve read what you shared. Now, let’s chat about it!");
-        generateInitialQuestions(pastedContent);
-        return;
-    }
-    // --- Ongoing Discussion on Pasted Content ---
-    if (activeDiscussionText) {
-        // Reset on command
-        if (/\b(something else|stop talking|switch topics|change topic)\b/i.test(message)) {
-            activeDiscussionText = "";
-            addBotMessage("Okay! Let’s switch topics. What would you like to do now?");
-            return;
-        }
-        // Continue discussion
-        showTypingIndicator();
-        try {
-            const ongoingPrompt = `\nHere’s the passage again:\n"${activeDiscussionText}"\n\nThe learner said:\n"${message}"\n\nRespond in a way that keeps the discussion going. Ask another simple question or give helpful feedback.`;
-            const response = await fetch(BACKEND_CHAT_API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [
-                        { role: "user", parts: [{ text: ongoingPrompt }] }
-                    ],
-                    generationConfig: {
-                        temperature: 0.4,
-                        maxOutputTokens: 300
-                    }
-                }),
-                mode: 'cors',
-                credentials: 'include'
-            });
-            const data = await response.json();
-            let reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            reply = ensureFullSentence(reply, responseLength);
-            hideTypingIndicator();
-            addBotMessage(reply || "Let's keep talking about what you pasted!");
-            chatHistory.push({ role: "assistant", content: reply });
-            userMessageBuffer.push({ role: "assistant", content: reply });
-            appendToConversationKnowledge({
-                timestamp: new Date().toISOString(),
-                role: 'assistant',
-                content: reply
-            });
-            if (userMessageBuffer.length >= SUMMARY_INTERVAL) {
-                const summary = summarizeMessages(userMessageBuffer);
-                appendToConversationKnowledge({
-                    user: currentUser,
-                    timestamp: new Date().toISOString(),
-                    summary
-                });
-                userMessageBuffer = [];
-            }
-        } catch (error) {
-            hideTypingIndicator();
-            addBotMessage("I'm having trouble thinking right now. Can you try again in a bit?");
-        }
-        return;
-    }
-
-    // --- Times Table Quiz Logic ---
-    // Stop quiz if user says stop or similar
-    if (activeQuiz && /\b(stop|cancel|quit|exit|something else)\b/i.test(message)) {
-        activeQuiz = null;
-        addBotMessage("Okay, we’ve stopped the quiz. Let me know if you want to do another one!");
-        hideTypingIndicator();
-        return;
-    }
-    // If awaiting answer in quiz mode
-    if (activeQuiz?.awaitingAnswer) {
-        const correct = activeQuiz.table * activeQuiz.current;
-        const userAnswer = parseInt(message.trim(), 10);
-        if (userAnswer === correct) {
-            addBotMessage("✅ That's right! Great job!");
-            activeQuiz.current++;
-            if (activeQuiz.current <= 12) {
-                addBotMessage(`Next one: What is ${activeQuiz.table} times ${activeQuiz.current}?`);
-                activeQuiz.awaitingAnswer = true;
-            } else {
-                addBotMessage(`🎉 You've completed the ${activeQuiz.table} times table quiz! Well done!`);
-                activeQuiz = null;
-            }
-        } else {
-            addBotMessage("❌ Oops, not quite. Try again!");
-            activeQuiz.awaitingAnswer = true;
-        }
-        hideTypingIndicator();
-        return;
-    }
-    // Detect quiz trigger (e.g. "ask me questions of the 11 times table")
-    const quizMatch = message.match(/(?:ask|give|test).*?(\d{1,2})\s*(?:times|x)\s*table/i);
-    if (quizMatch) {
-        const table = parseInt(quizMatch[1], 10);
-        if (table >= 1 && table <= 12) {
-            activeQuiz = { table, current: 2, awaitingAnswer: true };
-            addBotMessage(`Here we go! What is ${table} times 2?`);
-            hideTypingIndicator();
-            return;
-        }
-    }
-
-    showTypingIndicator();
-    try {
-        // Debug: Log user input
-        console.log("🧠 User Message:", message);
-        // Retrieve top facts to guide the AI
-        const retrievedFacts = getTopFactsWithScores(message, knowledgeCorpus, 3);
-        console.log("📚 Retrieved Facts:", retrievedFacts);
-        const topFacts = retrievedFacts.map(f => f.text.replace(/\[[^\]]+\]/g, '').trim()); // Strip [topic][tag]
-        const factBlock = topFacts.join("\n");
-
-        // Build the prompt for the AI (always build, even if no facts)
-        const prompt = `You are Bryneven Helper, a chatbot for 7-year-olds.\nUse the facts below to answer the question in a friendly way.\nIf there are no helpful facts, try to help anyway.\nFacts:\n${factBlock}\n\nUser: ${message}`;
-        console.log("✍️ Prompt to AI:", prompt);
-
-        // Call backend API instead of Gemini directly
-        const response = await fetch(BACKEND_CHAT_API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [
-                    { role: "user", parts: [{ text: prompt }] }
-                ],
-                generationConfig: {
-                    maxOutputTokens: Math.max(200, Math.min(responseLength, 1000)),
-                    temperature: 0.3
-                }
-            }),
-            mode: 'cors',
-            credentials: 'include'
-        });
-        const data = await response.json();
-        let reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        reply = ensureFullSentence(reply, responseLength);
-        hideTypingIndicator();
-        // Only use fallback if reply is empty or missing
-        if (!reply || reply.trim().length === 0) {
-            addBotMessage("I'm not sure how to answer that yet, but let's learn together!");
-            return;
-        }
-        addBotMessage(reply);
-        chatHistory.push({ role: "assistant", content: reply });
-        userMessageBuffer.push({ role: "assistant", content: reply });
-        appendToConversationKnowledge({
-            timestamp: new Date().toISOString(),
-            role: 'assistant',
-            content: reply
+            content: safeReply
         });
         if (userMessageBuffer.length >= SUMMARY_INTERVAL) {
             const summary = summarizeMessages(userMessageBuffer);
@@ -776,10 +687,93 @@ async function sendMessage() {
             });
             userMessageBuffer = [];
         }
-    } catch (error) {
-        console.error("❌ AI call failed:", error);
+        return;
+    }
+
+    const payload = {
+        contents: [
+            { role: "user", parts: [{ text: message }] }
+        ],
+        generationConfig: {
+            maxOutputTokens: Math.round(Math.max(150, Math.min(maxTokensSetting, 1000))),
+            temperature: Number(Number(temperatureSetting).toFixed(2))
+        }
+    };
+
+    showTypingIndicator();
+
+    let streamedSuccessfully = false;
+    let streamParagraph = null;
+    let finalReply = '';
+
+    if (STREAMING_ENABLED) {
+        try {
+            const streamResult = await streamChatCompletion(payload);
+            if (streamResult && typeof streamResult.text === 'string') {
+                finalReply = streamResult.text;
+                streamParagraph = streamResult.paragraph || null;
+                streamedSuccessfully = true;
+            }
+        } catch (streamError) {
+            console.warn('Streaming failed, falling back to JSON response.', streamError);
+        }
+    }
+
+    if (!streamedSuccessfully) {
+        try {
+            finalReply = await requestChatCompletion(payload);
+        } catch (error) {
+            hideTypingIndicator();
+            const lower = (error.message || '').toLowerCase();
+            if (lower.includes('missing openrouter_api_key')) {
+                addBotMessage("The server isn't ready yet. Please add the OpenRouter API key and try again.");
+            } else {
+                addBotMessage("Hmm, I couldn't reach my helper brain. Please try again in a moment.");
+            }
+            console.error('Chat API responded with error:', error);
+            return;
+        }
+    }
+
+    if (!streamedSuccessfully || !streamParagraph) {
         hideTypingIndicator();
-        addBotMessage("I'm having trouble thinking right now. Can you try again in a bit?");
+    }
+
+    finalReply = ensureFullSentence(finalReply, maxTokensSetting);
+
+    if (!finalReply || !finalReply.trim()) {
+        if (streamedSuccessfully && streamParagraph) {
+            streamParagraph.textContent = "I'm not sure how to answer that yet, but let's learn together!";
+        } else {
+            addBotMessage("I'm not sure how to answer that yet, but let's learn together!");
+        }
+        return;
+    }
+
+    if (streamedSuccessfully) {
+        if (streamParagraph) {
+            streamParagraph.textContent = sanitizeForDisplay(finalReply);
+        }
+    } else {
+        addBotMessage(finalReply);
+    }
+
+    chatHistory.push({ role: "assistant", content: finalReply });
+    userMessageBuffer.push({ role: "assistant", content: finalReply });
+    appendToConversationKnowledge({
+        timestamp: new Date().toISOString(),
+        role: 'assistant',
+        content: finalReply
+    });
+
+    if (userMessageBuffer.length >= SUMMARY_INTERVAL) {
+        const summary = summarizeMessages(userMessageBuffer);
+        appendToConversationKnowledge({
+            user: currentUser,
+            timestamp: new Date().toISOString(),
+            summary
+        });
+        userMessageBuffer = [];
     }
 }
 
@@ -942,24 +936,34 @@ async function handleQuizAnswerWithExplanation(selected, questionObj, questionId
     feedback = `Incorrect. The correct answer is ${questionObj.answer}.`;
   }
   addBotMessage(feedback);
-  // Request academic explanation from Phi-4
+  // Request a kid-friendly explanation via the same backend chat API
   showTypingIndicator();
   try {
-    const phiPrompt = `Evaluate the following multiple-choice question and the learner's answer. Provide an academic explanation suitable for a primary school learner.\n\nQuestion: ${questionObj.question}\nOptions: ${questionObj.options.join(', ')}\nLearner's answer: ${selected}\nCorrect answer: ${questionObj.answer}\nExplanation (if any): ${questionObj.explanation || ''}`;
-    const response = await fetch('/api/chat', {
+    const explainPrompt = `Explain, in simple kid-friendly words, why the correct answer is ${questionObj.answer} for this question, and give one short tip for next time.\n\nQuestion: ${questionObj.question}\nOptions: ${questionObj.options.join(', ')}\nLearner's answer: ${selected}\nCorrect answer: ${questionObj.answer}\nExplanation (if any): ${questionObj.explanation || ''}`;
+    const response = await fetch(BACKEND_CHAT_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: phiPrompt,
-        section: 'Knowledge',
-        context: questionObj.question,
-        user: currentUser || ''
+        contents: [ { role: 'user', parts: [ { text: explainPrompt } ] } ],
+        generationConfig: { maxOutputTokens: 300, temperature: 0.5 }
       })
     });
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
     hideTypingIndicator();
-    addBotMessage(data.reply || 'Here is some feedback to help you understand the answer.');
+    if (!response.ok) {
+      console.error('Quiz explanation request failed:', { status: response.status, data });
+      addBotMessage('Could not load explanation. Please try again.');
+      return;
+    }
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Here is some feedback to help you understand the answer.';
+    addBotMessage(text);
   } catch (err) {
+    console.error('Quiz explanation fetch failed:', err);
     hideTypingIndicator();
     addBotMessage('Could not load explanation. Please try again.');
   }
@@ -1025,9 +1029,9 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
         updateStepIndicator();
         wizardStepContent.innerHTML = `
             <div class="flex flex-col items-center">
-                <div class="text-3xl mb-2">📚 Buddy-Bot</div>
+                <div class="text-3xl mb-2"> Buddy-Bot</div>
                 <div class="text-lg font-semibold mb-4 text-center">Ready to join our learning galaxy?</div>
-                <button id="wizardNextBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition">Let’s Lift Off!</button>
+                <button id="wizardNextBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition">Lets Lift Off!</button>
             </div>
         `;
         document.getElementById('wizardNextBtn').onclick = () => { wizardStep = 1; renderStep1(); };
@@ -1049,7 +1053,7 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
         `;
         // Animated placeholder for name
         const nameInput = document.getElementById('wizardName');
-        const namePh = 'Type your hero name here …';
+        const namePh = 'Type your hero name here ';
         let phIdx = 0;
         nameInput.placeholder = '';
         let phInterval = setInterval(() => {
@@ -1065,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
         const emailCheck = document.getElementById('emailCheck');
         emailInput.addEventListener('input', () => {
             const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value);
-            emailCheck.textContent = valid ? '✅' : (emailInput.value ? '❌' : '');
+            emailCheck.textContent = valid ? '' : (emailInput.value ? '' : '');
         });
         // Next button
         document.getElementById('wizardNextBtn').onclick = () => {
@@ -1093,7 +1097,7 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
                 schoolsList = [];
             }
         }
-        var schoolOptions = '<option value="">Choose a school…</option>';
+        var schoolOptions = '<option value="">Choose a school</option>';
         for (var i = 0; i < schoolsList.length; i++) {
             schoolOptions += '<option value="' + schoolsList[i].id + '">' + schoolsList[i].name + '</option>';
         }
@@ -1104,7 +1108,7 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
             </select>
             <label class="block mb-2 font-semibold">Select Your Grade</label>
             <select id="wizardGrade" class="w-full p-2 border border-gray-300 rounded mb-4" disabled>
-                <option value="">Choose a grade…</option>
+                <option value="">Choose a grade</option>
             </select>
             <button id="wizardNextBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition">Next</button>
             <button id="wizardBackBtn" class="text-gray-500 hover:underline mt-2 ml-2">Back</button>
@@ -1114,14 +1118,14 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
         schoolSelect.addEventListener('change', () => {
             if (schoolSelect.value) {
                 gradeSelect.disabled = false;
-                var gradeOptions = '<option value="">Choose a grade…</option>';
+                var gradeOptions = '<option value="">Choose a grade</option>';
                 for (var i = 1; i <= 12; i++) {
                     gradeOptions += '<option value="' + i + '">Grade ' + i + '</option>';
                 }
                 gradeSelect.innerHTML = gradeOptions;
             } else {
                 gradeSelect.disabled = true;
-                gradeSelect.innerHTML = '<option value="">Choose a grade…</option>';
+                gradeSelect.innerHTML = '<option value="">Choose a grade</option>';
             }
         });
         document.getElementById('wizardNextBtn').onclick = () => {
@@ -1142,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', function setupSignUpWizardWrapper(
         updateStepIndicator();
         wizardStepContent.innerHTML = `
             <div class="flex flex-col items-center">
-                <div class="text-4xl mb-2 animate-bounce">📚 Buddy-Bot</div>
+                <div class="text-4xl mb-2 animate-bounce"> Buddy-Bot</div>
                 <div class="text-2xl font-bold mb-2">Welcome, ${userProfile.name}!</div>
                 <div class="text-lg mb-2 text-center">Homework HQ unlocked.</div>
                 <label class="block mb-2 font-semibold">Choose a Password</label>

@@ -6,59 +6,79 @@
     <title>Bryneven Primary School Helper</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./styles.css">
-    <!-- Added Google Font: Poppins -->
+    <link rel="stylesheet" href="/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<!-- Shared header will be loaded here -->
 <div id="header-container"></div>
 <script>
-  fetch('./header.html')
+    fetch('/header.html')
     .then(res => res.text())
     .then(html => {
       document.getElementById('header-container').innerHTML = html;
     });
 </script>
 <div class="chat-container">
-    <main id="chat-area" class="flex-1 overflow-y-auto">
-        <!-- Example messages, real messages will be rendered by JS -->
-        <div class="message bot"><p>Hi there! 👋 I'm the Bryneven Primary School Helper! ...</p></div>
-        <div class="message user"><p>Thank you!</p></div>
-    </main>
-    
-    <!-- Chat input area pinned below chat messages -->
+    <div class="chat-grid">
+        <div class="chat-main-col">
+            <main id="chat-area" class="chat-messages">
+                <div class="message bot"><p>Hi there! I'm the Bryneven Primary School Helper. Ask me about lessons, homework, or school life!</p></div>
+            </main>
+        </div>
+
+        <aside class="chat-sidebar">
+            <div class="sidebar-section">
+                <label class="sidebar-label" for="suggestion-select">Quick topics</label>
+                <select id="suggestion-select" class="sidebar-select">
+                    <option value="">Choose a topic…</option>
+                    <option>About our school</option>
+                    <option>Purple Mash help</option>
+                    <option>School hours</option>
+                    <option>Math tutoring</option>
+                    <option>Homework tips</option>
+                    <option>Explain fractions</option>
+                    <option>Reading practice</option>
+                    <option>Science project ideas</option>
+                </select>
+            </div>
+
+            <div class="sidebar-tip" id="contextTip">
+                <div class="tip-text">Tip: Highlight a word in my reply, then right-click (or long-press) to Describe, Define, Explain, or get an Example.</div>
+                <div class="tip-actions">
+                    <button id="dismissTip" class="tip-dismiss">Got it</button>
+                    <label class="tip-toggle"><input type="checkbox" id="showTipToggle" checked> Show tip next time</label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <label class="sidebar-label" for="temperatureSlider">Temperature <span id="temperatureValue">0.7</span></label>
+                <input id="temperatureSlider" type="range" min="0" max="1" step="0.1" value="0.7">
+            </div>
+            <div class="sidebar-section">
+                <label class="sidebar-label" for="maxTokensSlider">Max words <span id="maxTokensValue">400</span></label>
+                <input id="maxTokensSlider" type="range" min="150" max="700" step="50" value="400">
+            </div>
+        </aside>
+    </div>
+
     <div class="input-area">
         <textarea id="user-input" placeholder="Type your question here..." rows="2"></textarea>
-        <button id="send-button">
-            <i class="fas fa-paper-plane"></i>
-        </button>
+        <button id="send-button"><i class="fas fa-paper-plane"></i></button>
     </div>
-    
-    <div class="suggestions-area">
-        <p class="suggestions-title">Try asking about:</p>
-        <div class="suggestion-buttons">
-            <button class="suggestion-btn">About our school</button>
-            <button class="suggestion-btn">Purple Mash help</button>
-            <button class="suggestion-btn">School hours</button>
-            <button class="suggestion-btn">Math tutoring</button>
-        </div>
-    </div>
-    
+
     <footer>
-        Powered by Gemini | © 2025 Bryneven Primary School
+        Powered by DeepSeek via OpenRouter | (c) 2025 Bryneven Primary School
     </footer>
 </div>
 
-<!-- Script for auto-focusing the input on load -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     var input = document.getElementById('user-input');
     if(input) input.focus();
   });
 </script>
-
-<script type="module" src="data.js"></script>
-<script type="module" src="chat.js"></script>
+<script>window.CHATBOT_API_BASE = window.CHATBOT_API_BASE || '';</script>
+<script type="module" src="/data.js"></script>
+<script type="module" src="/chat.js"></script>
 </body>
 </html>

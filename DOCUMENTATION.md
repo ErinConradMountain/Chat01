@@ -164,6 +164,14 @@ This architecture allows for clear separation of concerns, easy customization of
 - For API issues, review logs in `logger.js` and server output.
 - Ensure data files are valid JSON/JS.
 
+### Streaming responses vs. JSON fallback
+
+- The chat UI uses SSE streaming by default for faster feedback.
+- Some browsers/extensions/network paths can block or buffer SSE, causing placeholder replies.
+- To force the most compatible path while testing or in constrained environments, disable streaming with:
+  - `http://localhost:3000/?nostream=1`
+- This makes the UI use a single JSON response per turn (no incremental tokens) and typically resolves UI-only reply issues.
+
 ---
 
 ## Notes
